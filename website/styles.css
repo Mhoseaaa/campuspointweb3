@@ -1029,8 +1029,8 @@ select {
     font-weight: 600;
 }
 
-.verify-section > p,
-.claim-section > p {
+.verify-section>p,
+.claim-section>p {
     color: var(--text-muted);
     font-size: 0.85rem;
     margin-bottom: var(--spacing-md);
@@ -1144,6 +1144,18 @@ select {
 
 .activity-card:hover .request-hint {
     opacity: 1;
+}
+
+/* Admin view styles */
+.activity-card.admin-view {
+    cursor: default;
+}
+
+.admin-badge {
+    margin-top: var(--spacing-md);
+    font-size: 0.75rem;
+    color: var(--warning);
+    font-weight: 500;
 }
 
 /* ===== Waiting List ===== */
@@ -1269,4 +1281,21 @@ select {
     display: flex;
     justify-content: center;
     gap: var(--spacing-md);
+}
+
+/* Approve Modal */
+.approve-modal-content {
+    padding: var(--spacing-lg);
+}
+
+.approve-details {
+    background: var(--bg-tertiary);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    margin: var(--spacing-md) 0;
+}
+
+.approve-details p {
+    margin: var(--spacing-xs) 0;
+    font-size: 0.9rem;
 }

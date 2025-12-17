@@ -349,16 +349,19 @@ class CampusPointApp {
                 return;
             }
 
-            // Check request status for each activity
+            // Check if user is admin/owner
+            const isOwner = await window.web3Utils.isContractOwner();
+
+            // Check request status for each activity (only for non-admin)
             const activitiesWithStatus = await Promise.all(
                 activities.map(async (activity) => {
-                    const hasRequested = await window.web3Utils.hasRequested(activity.id);
+                    const hasRequested = isOwner ? false : await window.web3Utils.hasRequested(activity.id);
                     return { ...activity, hasRequested };
                 })
             );
 
             container.innerHTML = activitiesWithStatus.map(activity => `
-                <div class="activity-card ${activity.hasRequested ? 'requested' : ''}" 
+                <div class="activity-card ${activity.hasRequested ? 'requested' : ''} ${isOwner ? 'admin-view' : ''}" 
                      data-activity-id="${activity.id}" 
                      data-activity-name="${activity.name}"
                      data-activity-active="${activity.isActive}">
@@ -367,19 +370,25 @@ class CampusPointApp {
                     <div class="status ${activity.isActive ? 'status-active' : 'status-inactive'}">
                         ${activity.isActive ? '● Sedang Berlangsung' : '○ Selesai'}
                     </div>
-                    ${activity.hasRequested ? '<div class="request-badge">📨 Sudah Request</div>' : '<div class="request-hint">Double-click untuk request sertifikat</div>'}
+                    ${isOwner
+                    ? '<div class="admin-badge">👑 Admin View</div>'
+                    : (activity.hasRequested
+                        ? '<div class="request-badge">📨 Sudah Request</div>'
+                        : '<div class="request-hint">Double-click untuk request sertifikat</div>')}
                 </div>
             `).join('');
 
-            // Add double-click handlers
-            container.querySelectorAll('.activity-card').forEach(card => {
-                card.addEventListener('dblclick', (e) => {
-                    const activityId = card.dataset.activityId;
-                    const activityName = card.dataset.activityName;
-                    const isActive = card.dataset.activityActive === 'true';
-                    this.handleActivityDoubleClick(activityId, activityName, isActive);
+            // Add double-click handlers ONLY for non-admin
+            if (!isOwner) {
+                container.querySelectorAll('.activity-card').forEach(card => {
+                    card.addEventListener('dblclick', (e) => {
+                        const activityId = card.dataset.activityId;
+                        const activityName = card.dataset.activityName;
+                        const isActive = card.dataset.activityActive === 'true';
+                        this.handleActivityDoubleClick(activityId, activityName, isActive);
+                    });
                 });
-            });
+            }
 
         } catch (error) {
             container.innerHTML = `
@@ -773,12 +782,17 @@ class CampusPointApp {
             return;
         }
 
-        // Show confirmation modal
+        // Show confirmation modal with URI input
         this.openModal('Request Sertifikat', `
             <div class="request-modal-content">
                 <p>Anda akan mengajukan request sertifikat untuk:</p>
                 <h3>${activityName}</h3>
-                <p class="modal-note">Setelah request diajukan, admin akan mereview dan approve sertifikat Anda.</p>
+                <div class="form-group" style="margin-top: var(--spacing-lg);">
+                    <label for="requestUri">IPFS URI (Metadata Sertifikat)</label>
+                    <input type="text" id="requestUri" placeholder="ipfs://Qm..." required>
+                    <small style="color: var(--text-muted); font-size: 0.75rem;">Upload metadata sertifikat Anda ke IPFS terlebih dahulu</small>
+                </div>
+                <p class="modal-note">Setelah request diajukan, admin akan mereview dan menyetujui sertifikat Anda.</p>
                 <div class="modal-actions">
                     <button class="btn btn-secondary" onclick="app.closeModal()">Batal</button>
                     <button class="btn btn-primary" onclick="app.handleRequestCertificate(${activityId})">Request Sertifikat</button>
@@ -791,11 +805,19 @@ class CampusPointApp {
      * Handle request certificate submit
      */
     async handleRequestCertificate(activityId) {
+        const uriInput = document.getElementById('requestUri');
+        const uri = uriInput ? uriInput.value.trim() : '';
+
+        if (!uri) {
+            this.showToast('Masukkan IPFS URI terlebih dahulu', 'warning');
+            return;
+        }
+
         try {
             this.closeModal();
             this.showToast('Mengajukan request sertifikat...', 'warning');
 
-            await window.web3Utils.requestCertificate(activityId);
+            await window.web3Utils.requestCertificate(activityId, uri);
 
             this.showToast('Request sertifikat berhasil diajukan!', 'success');
 
@@ -831,11 +853,19 @@ class CampusPointApp {
                 return;
             }
 
-            // Build waiting list HTML
+            // Build waiting list HTML with URI preview
             let html = '';
 
             for (const activity of activitiesWithPending) {
                 const pendingAddresses = await window.web3Utils.getPendingRequests(activity.id);
+
+                // Get URI for each pending request
+                const requestsWithUri = await Promise.all(
+                    pendingAddresses.map(async (address) => {
+                        const uri = await window.web3Utils.getRequestUri(activity.id, address);
+                        return { address, uri };
+                    })
+                );
 
                 html += `
                     <div class="waiting-list-activity">
@@ -844,13 +874,29 @@ class CampusPointApp {
                             <span class="pending-count">${activity.pendingCount} pending</span>
                         </div>
                         <div class="waiting-list-items">
-                            ${pendingAddresses.map(address => `
-                                <div class="waiting-list-item">
-                                    <span class="student-address">${window.web3Utils.shortenAddress(address)}</span>
-                                    <span class="full-address" title="${address}">${address}</span>
-                                    <button class="btn btn-approve" onclick="app.handleApproveRequest(${activity.id}, '${address}')">
-                                        ✓ Approve
-                                    </button>
+                            ${requestsWithUri.map(req => `
+                                <div class="waiting-list-item-card">
+                                    <div class="request-info">
+                                        <div class="student-address-row">
+                                            <span class="label">Mahasiswa:</span>
+                                            <span class="address" title="${req.address}">${window.web3Utils.shortenAddress(req.address)}</span>
+                                        </div>
+                                        <div class="uri-preview-row">
+                                            <span class="label">IPFS URI:</span>
+                                            <a href="${window.web3Utils.resolveIpfsUri(req.uri)}" target="_blank" class="uri-link">${req.uri.substring(0, 30)}...</a>
+                                        </div>
+                                        <div class="preview-container" data-uri="${req.uri}">
+                                            <small>Loading preview...</small>
+                                        </div>
+                                    </div>
+                                    <div class="request-actions">
+                                        <button class="btn btn-approve" onclick="app.handleApproveRequest(${activity.id}, '${req.address}')">
+                                            ✓ Approve
+                                        </button>
+                                        <button class="btn btn-reject" onclick="app.handleRejectRequest(${activity.id}, '${req.address}')">
+                                            ✕ Tolak
+                                        </button>
+                                    </div>
                                 </div>
                             `).join('')}
                         </div>
@@ -859,6 +905,9 @@ class CampusPointApp {
             }
 
             container.innerHTML = html;
+
+            // Load previews asynchronously
+            this.loadUriPreviews();
 
         } catch (error) {
             console.error('Error loading waiting list:', error);
@@ -871,13 +920,80 @@ class CampusPointApp {
     }
 
     /**
-     * Handle approve certificate request
+     * Load URI previews for waiting list items
+     */
+    async loadUriPreviews() {
+        const previewContainers = document.querySelectorAll('.preview-container[data-uri]');
+
+        for (const container of previewContainers) {
+            const uri = container.dataset.uri;
+            try {
+                const resolvedUri = window.web3Utils.resolveIpfsUri(uri);
+                const response = await fetch(resolvedUri);
+                const metadata = await response.json();
+
+                if (metadata.image) {
+                    const imageUrl = window.web3Utils.resolveIpfsUri(metadata.image);
+                    container.innerHTML = `
+                        <img src="${imageUrl}" alt="Certificate Preview" class="cert-preview-img" onerror="this.style.display='none'">
+                        <p class="cert-name">${metadata.name || 'No name'}</p>
+                    `;
+                } else {
+                    container.innerHTML = `<small>No image in metadata</small>`;
+                }
+            } catch (error) {
+                container.innerHTML = `<small style="color: var(--error);">Cannot load preview</small>`;
+            }
+        }
+    }
+
+    /**
+     * Handle approve certificate request - shows modal for URI input
      */
     async handleApproveRequest(activityId, studentAddress) {
-        try {
-            this.showToast('Menyetujui request...', 'warning');
+        // Get activity name for display
+        const activities = await window.web3Utils.getAllActivities();
+        const activity = activities.find(a => a.id === activityId.toString());
+        const activityName = activity ? activity.name : `Kegiatan #${activityId}`;
 
-            await window.web3Utils.approveCertificateRequest(activityId, studentAddress);
+        // Show modal to input URI
+        this.openModal('Approve Sertifikat', `
+            <div class="approve-modal-content">
+                <p>Terbitkan sertifikat untuk:</p>
+                <div class="approve-details">
+                    <p><strong>Kegiatan:</strong> ${activityName}</p>
+                    <p><strong>Mahasiswa:</strong> ${window.web3Utils.shortenAddress(studentAddress)}</p>
+                </div>
+                <div class="form-group" style="margin-top: var(--spacing-lg);">
+                    <label for="approveUri">IPFS URI (Metadata Sertifikat)</label>
+                    <input type="text" id="approveUri" placeholder="ipfs://Qm..." required>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" onclick="app.closeModal()">Batal</button>
+                    <button class="btn btn-primary" onclick="app.confirmApproveRequest(${activityId}, '${studentAddress}')">Terbitkan Sertifikat</button>
+                </div>
+            </div>
+        `);
+    }
+
+    /**
+     * Confirm approve with URI
+     */
+    async confirmApproveRequest(activityId, studentAddress) {
+        const uriInput = document.getElementById('approveUri');
+        const uri = uriInput ? uriInput.value.trim() : '';
+
+        if (!uri) {
+            this.showToast('Masukkan IPFS URI terlebih dahulu', 'warning');
+            return;
+        }
+
+        try {
+            this.closeModal();
+            this.showToast('Menerbitkan sertifikat...', 'warning');
+
+            // Use mintCertificate instead of approveCertificateRequest
+            await window.web3Utils.mintCertificate(activityId, studentAddress, uri);
 
             this.showToast('Sertifikat berhasil diterbitkan!', 'success');
 
@@ -885,7 +1001,7 @@ class CampusPointApp {
             await this.loadWaitingList();
 
         } catch (error) {
-            this.showToast('Gagal approve request: ' + (error.reason || error.message), 'error');
+            this.showToast('Gagal menerbitkan sertifikat: ' + (error.reason || error.message), 'error');
         }
     }
 

@@ -64,7 +64,7 @@ const ACTIVITY_CERTIFICATE_ABI = [
     "event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId)"
 ];
 
-// ActivityManager ABI (Updated with request/approval feature)
+// ActivityManager ABI (Updated with request/approval + reject feature)
 const ACTIVITY_MANAGER_ABI = [
     "function owner() view returns (address)",
     "function campusPoint() view returns (address)",
@@ -75,6 +75,8 @@ const ACTIVITY_MANAGER_ABI = [
     "function hasRewarded(uint256 activityId, address student) view returns (bool)",
     "function hasClaimed(uint256 activityId, address student) view returns (bool)",
     "function hasRequested(uint256 activityId, address student) view returns (bool)",
+    "function requestUri(uint256 activityId, address student) view returns (string)",
+    "function getRequestUri(uint256 activityId, address student) view returns (string)",
     "function canClaimCertificate(uint256 activityId, address student) view returns (bool)",
     "function createActivity(string name, uint256 pointReward)",
     "function setActivityCertUri(uint256 activityId, string uri)",
@@ -82,17 +84,19 @@ const ACTIVITY_MANAGER_ABI = [
     "function rewardStudent(uint256 activityId, address student)",
     "function claimCertificate(uint256 activityId)",
     "function mintCertificate(uint256 activityId, address student, string uri)",
-    "function requestCertificate(uint256 activityId)",
+    "function requestCertificate(uint256 activityId, string uri)",
     "function getPendingRequests(uint256 activityId) view returns (address[])",
     "function getPendingRequestCount(uint256 activityId) view returns (uint256)",
     "function approveCertificateRequest(uint256 activityId, address student)",
+    "function rejectCertificateRequest(uint256 activityId, address student)",
     "event ActivityCreated(uint256 indexed id, string name, uint256 pointReward)",
     "event StudentRewarded(uint256 indexed activityId, address indexed student, uint256 pointReward)",
     "event CertificateMinted(uint256 indexed activityId, address indexed student, uint256 tokenId, string uri)",
     "event CertUriSet(uint256 indexed activityId, string uri)",
     "event CertificateClaimed(uint256 indexed activityId, address indexed student, uint256 tokenId)",
-    "event CertificateRequested(uint256 indexed activityId, address indexed student)",
-    "event CertificateApproved(uint256 indexed activityId, address indexed student, uint256 tokenId)"
+    "event CertificateRequested(uint256 indexed activityId, address indexed student, string uri)",
+    "event CertificateApproved(uint256 indexed activityId, address indexed student, uint256 tokenId)",
+    "event CertificateRejected(uint256 indexed activityId, address indexed student)"
 ];
 
 // Export for use in other files

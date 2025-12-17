@@ -492,16 +492,30 @@ class Web3Utils {
     // ===== NEW: Certificate Request & Approval Functions =====
 
     /**
-     * Request certificate for an activity (student)
+     * Request certificate for an activity with URI (student)
      */
-    async requestCertificate(activityId) {
+    async requestCertificate(activityId, uri) {
         if (!this.contracts.activityManager) {
             throw new Error('Contract belum dikonfigurasi');
         }
 
-        const tx = await this.contracts.activityManager.requestCertificate(activityId);
+        const tx = await this.contracts.activityManager.requestCertificate(activityId, uri);
         await tx.wait();
         return tx;
+    }
+
+    /**
+     * Get request URI submitted by student
+     */
+    async getRequestUri(activityId, studentAddress) {
+        if (!this.contracts.activityManager) return '';
+
+        try {
+            return await this.contracts.activityManager.getRequestUri(activityId, studentAddress);
+        } catch (error) {
+            console.error('Error getting request URI:', error);
+            return '';
+        }
     }
 
     /**
@@ -558,6 +572,19 @@ class Web3Utils {
         }
 
         const tx = await this.contracts.activityManager.approveCertificateRequest(activityId, studentAddress);
+        await tx.wait();
+        return tx;
+    }
+
+    /**
+     * Reject certificate request (admin only)
+     */
+    async rejectCertificateRequest(activityId, studentAddress) {
+        if (!this.contracts.activityManager) {
+            throw new Error('Contract belum dikonfigurasi');
+        }
+
+        const tx = await this.contracts.activityManager.rejectCertificateRequest(activityId, studentAddress);
         await tx.wait();
         return tx;
     }
