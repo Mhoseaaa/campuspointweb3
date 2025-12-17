@@ -1,8 +1,8 @@
 // Smart Contract Addresses - Update these after deploying to Ganache
 const CONTRACT_ADDRESSES = {
-    CAMPUS_POINT: '0x0000000000000000000000000000000000000000', // Update after deployment
-    ACTIVITY_CERTIFICATE: '0x0000000000000000000000000000000000000000', // Update after deployment
-    ACTIVITY_MANAGER: '0x0000000000000000000000000000000000000000' // Update after deployment
+    CAMPUS_POINT: '0xE1CE91ff70b2b2ac3E27A0cacDb4C2ac06a693e2',
+    ACTIVITY_CERTIFICATE: '0x97eAa29122161bc8f21c3A57df1e37852AA3e99a',
+    ACTIVITY_MANAGER: '0x4b949075E934cCC95e3Fd833F9463C82Be318F1b'
 };
 
 // Network Configuration - Ganache Local
@@ -64,7 +64,7 @@ const ACTIVITY_CERTIFICATE_ABI = [
     "event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId)"
 ];
 
-// ActivityManager ABI (Updated with claim feature)
+// ActivityManager ABI (Updated with request/approval feature)
 const ACTIVITY_MANAGER_ABI = [
     "function owner() view returns (address)",
     "function campusPoint() view returns (address)",
@@ -74,6 +74,7 @@ const ACTIVITY_MANAGER_ABI = [
     "function getActivity(uint256 activityId) view returns (uint256 id, string name, uint256 pointReward, bool isActive, string certUri)",
     "function hasRewarded(uint256 activityId, address student) view returns (bool)",
     "function hasClaimed(uint256 activityId, address student) view returns (bool)",
+    "function hasRequested(uint256 activityId, address student) view returns (bool)",
     "function canClaimCertificate(uint256 activityId, address student) view returns (bool)",
     "function createActivity(string name, uint256 pointReward)",
     "function setActivityCertUri(uint256 activityId, string uri)",
@@ -81,11 +82,17 @@ const ACTIVITY_MANAGER_ABI = [
     "function rewardStudent(uint256 activityId, address student)",
     "function claimCertificate(uint256 activityId)",
     "function mintCertificate(uint256 activityId, address student, string uri)",
+    "function requestCertificate(uint256 activityId)",
+    "function getPendingRequests(uint256 activityId) view returns (address[])",
+    "function getPendingRequestCount(uint256 activityId) view returns (uint256)",
+    "function approveCertificateRequest(uint256 activityId, address student)",
     "event ActivityCreated(uint256 indexed id, string name, uint256 pointReward)",
     "event StudentRewarded(uint256 indexed activityId, address indexed student, uint256 pointReward)",
     "event CertificateMinted(uint256 indexed activityId, address indexed student, uint256 tokenId, string uri)",
     "event CertUriSet(uint256 indexed activityId, string uri)",
-    "event CertificateClaimed(uint256 indexed activityId, address indexed student, uint256 tokenId)"
+    "event CertificateClaimed(uint256 indexed activityId, address indexed student, uint256 tokenId)",
+    "event CertificateRequested(uint256 indexed activityId, address indexed student)",
+    "event CertificateApproved(uint256 indexed activityId, address indexed student, uint256 tokenId)"
 ];
 
 // Export for use in other files

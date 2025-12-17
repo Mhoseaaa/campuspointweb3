@@ -349,15 +349,37 @@ class CampusPointApp {
                 return;
             }
 
-            container.innerHTML = activities.map(activity => `
-                <div class="activity-card">
+            // Check request status for each activity
+            const activitiesWithStatus = await Promise.all(
+                activities.map(async (activity) => {
+                    const hasRequested = await window.web3Utils.hasRequested(activity.id);
+                    return { ...activity, hasRequested };
+                })
+            );
+
+            container.innerHTML = activitiesWithStatus.map(activity => `
+                <div class="activity-card ${activity.hasRequested ? 'requested' : ''}" 
+                     data-activity-id="${activity.id}" 
+                     data-activity-name="${activity.name}"
+                     data-activity-active="${activity.isActive}">
                     <h4>${activity.name}</h4>
                     <span class="points">💰 ${activity.pointReward} CPNT</span>
                     <div class="status ${activity.isActive ? 'status-active' : 'status-inactive'}">
                         ${activity.isActive ? '● Sedang Berlangsung' : '○ Selesai'}
                     </div>
+                    ${activity.hasRequested ? '<div class="request-badge">📨 Sudah Request</div>' : '<div class="request-hint">Double-click untuk request sertifikat</div>'}
                 </div>
             `).join('');
+
+            // Add double-click handlers
+            container.querySelectorAll('.activity-card').forEach(card => {
+                card.addEventListener('dblclick', (e) => {
+                    const activityId = card.dataset.activityId;
+                    const activityName = card.dataset.activityName;
+                    const isActive = card.dataset.activityActive === 'true';
+                    this.handleActivityDoubleClick(activityId, activityName, isActive);
+                });
+            });
 
         } catch (error) {
             container.innerHTML = `
@@ -432,6 +454,9 @@ class CampusPointApp {
                         <p>Anda bukan owner kontrak. Hanya owner yang dapat mengakses panel admin.</p>
                     </div>
                 `;
+            } else {
+                // Load waiting list for admin
+                await this.loadWaitingList();
             }
         } catch (error) {
             console.error('Error checking admin access:', error);
@@ -726,6 +751,141 @@ class CampusPointApp {
 
         } catch (error) {
             this.showToast('Gagal mengklaim sertifikat: ' + (error.reason || error.message), 'error');
+        }
+    }
+
+    // ===== NEW: Certificate Request & Approval Handlers =====
+
+    /**
+     * Handle double click on activity card
+     */
+    async handleActivityDoubleClick(activityId, activityName, isActive) {
+        // Check if already requested
+        const hasRequested = await window.web3Utils.hasRequested(activityId);
+
+        if (hasRequested) {
+            this.showToast('Anda sudah mengajukan request untuk kegiatan ini', 'warning');
+            return;
+        }
+
+        if (!isActive) {
+            this.showToast('Kegiatan ini sudah tidak aktif', 'warning');
+            return;
+        }
+
+        // Show confirmation modal
+        this.openModal('Request Sertifikat', `
+            <div class="request-modal-content">
+                <p>Anda akan mengajukan request sertifikat untuk:</p>
+                <h3>${activityName}</h3>
+                <p class="modal-note">Setelah request diajukan, admin akan mereview dan approve sertifikat Anda.</p>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" onclick="app.closeModal()">Batal</button>
+                    <button class="btn btn-primary" onclick="app.handleRequestCertificate(${activityId})">Request Sertifikat</button>
+                </div>
+            </div>
+        `);
+    }
+
+    /**
+     * Handle request certificate submit
+     */
+    async handleRequestCertificate(activityId) {
+        try {
+            this.closeModal();
+            this.showToast('Mengajukan request sertifikat...', 'warning');
+
+            await window.web3Utils.requestCertificate(activityId);
+
+            this.showToast('Request sertifikat berhasil diajukan!', 'success');
+
+            // Reload activities to update status
+            await this.loadActivitiesData();
+
+        } catch (error) {
+            this.showToast('Gagal request sertifikat: ' + (error.reason || error.message), 'error');
+        }
+    }
+
+    /**
+     * Load waiting list for admin panel
+     */
+    async loadWaitingList() {
+        const container = document.getElementById('waitingListContainer');
+        if (!container) return;
+
+        try {
+            container.innerHTML = '<div class="empty-state"><span class="loading"></span> Memuat waiting list...</div>';
+
+            const activities = await window.web3Utils.getAllActivitiesWithPendingCounts();
+
+            // Filter activities with pending requests
+            const activitiesWithPending = activities.filter(a => a.pendingCount > 0);
+
+            if (activitiesWithPending.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>Tidak ada request sertifikat yang menunggu persetujuan.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Build waiting list HTML
+            let html = '';
+
+            for (const activity of activitiesWithPending) {
+                const pendingAddresses = await window.web3Utils.getPendingRequests(activity.id);
+
+                html += `
+                    <div class="waiting-list-activity">
+                        <div class="waiting-list-header">
+                            <h4>${activity.name}</h4>
+                            <span class="pending-count">${activity.pendingCount} pending</span>
+                        </div>
+                        <div class="waiting-list-items">
+                            ${pendingAddresses.map(address => `
+                                <div class="waiting-list-item">
+                                    <span class="student-address">${window.web3Utils.shortenAddress(address)}</span>
+                                    <span class="full-address" title="${address}">${address}</span>
+                                    <button class="btn btn-approve" onclick="app.handleApproveRequest(${activity.id}, '${address}')">
+                                        ✓ Approve
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+
+        } catch (error) {
+            console.error('Error loading waiting list:', error);
+            container.innerHTML = `
+                <div class="empty-state">
+                    <p>Gagal memuat waiting list.</p>
+                </div>
+            `;
+        }
+    }
+
+    /**
+     * Handle approve certificate request
+     */
+    async handleApproveRequest(activityId, studentAddress) {
+        try {
+            this.showToast('Menyetujui request...', 'warning');
+
+            await window.web3Utils.approveCertificateRequest(activityId, studentAddress);
+
+            this.showToast('Sertifikat berhasil diterbitkan!', 'success');
+
+            // Reload waiting list
+            await this.loadWaitingList();
+
+        } catch (error) {
+            this.showToast('Gagal approve request: ' + (error.reason || error.message), 'error');
         }
     }
 

@@ -488,6 +488,116 @@ class Web3Utils {
         await tx.wait();
         return tx;
     }
+
+    // ===== NEW: Certificate Request & Approval Functions =====
+
+    /**
+     * Request certificate for an activity (student)
+     */
+    async requestCertificate(activityId) {
+        if (!this.contracts.activityManager) {
+            throw new Error('Contract belum dikonfigurasi');
+        }
+
+        const tx = await this.contracts.activityManager.requestCertificate(activityId);
+        await tx.wait();
+        return tx;
+    }
+
+    /**
+     * Check if user has requested certificate for an activity
+     */
+    async hasRequested(activityId, address = null) {
+        const targetAddress = address || this.userAddress;
+        if (!targetAddress || !this.contracts.activityManager) return false;
+
+        try {
+            return await this.contracts.activityManager.hasRequested(activityId, targetAddress);
+        } catch (error) {
+            console.error('Error checking hasRequested:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Get pending certificate requests for an activity (admin)
+     */
+    async getPendingRequests(activityId) {
+        if (!this.contracts.activityManager) return [];
+
+        try {
+            const addresses = await this.contracts.activityManager.getPendingRequests(activityId);
+            return addresses;
+        } catch (error) {
+            console.error('Error getting pending requests:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Get pending request count for an activity
+     */
+    async getPendingRequestCount(activityId) {
+        if (!this.contracts.activityManager) return 0;
+
+        try {
+            const count = await this.contracts.activityManager.getPendingRequestCount(activityId);
+            return count.toNumber();
+        } catch (error) {
+            console.error('Error getting pending request count:', error);
+            return 0;
+        }
+    }
+
+    /**
+     * Approve certificate request (admin only)
+     */
+    async approveCertificateRequest(activityId, studentAddress) {
+        if (!this.contracts.activityManager) {
+            throw new Error('Contract belum dikonfigurasi');
+        }
+
+        const tx = await this.contracts.activityManager.approveCertificateRequest(activityId, studentAddress);
+        await tx.wait();
+        return tx;
+    }
+
+    /**
+     * Get all activities with their pending request counts (for admin)
+     */
+    async getAllActivitiesWithPendingCounts() {
+        if (!this.contracts.activityManager) return [];
+
+        try {
+            const nextId = await this.contracts.activityManager.nextActivityId();
+            const activities = [];
+
+            for (let i = 1; i < nextId; i++) {
+                try {
+                    const activity = await this.contracts.activityManager.getActivity(i);
+                    const pendingCount = await this.getPendingRequestCount(i);
+
+                    if (activity.id && activity.id.toString() !== '0') {
+                        activities.push({
+                            id: activity.id.toString(),
+                            name: activity.name,
+                            pointReward: activity.pointReward.toString(),
+                            isActive: activity.isActive,
+                            certUri: activity.certUri,
+                            pendingCount: pendingCount
+                        });
+                    }
+                } catch (e) {
+                    console.error(`Error fetching activity ${i}:`, e);
+                }
+            }
+
+            return activities;
+        } catch (error) {
+            console.error('Error getting activities with pending counts:', error);
+            return [];
+        }
+    }
 }
 
 // Create global instance

@@ -30,12 +30,18 @@ contract ActivityManager {
     mapping(uint256 => mapping(address => bool)) public hasRewarded;
     // Tracking: mahasiswa mana yang sudah klaim sertifikat untuk activity mana
     mapping(uint256 => mapping(address => bool)) public hasClaimed;
+    // Tracking: mahasiswa mana yang sudah request sertifikat
+    mapping(uint256 => mapping(address => bool)) public hasRequested;
+    // Array untuk menyimpan daftar requester per activity
+    mapping(uint256 => address[]) private _requesters;
 
     event ActivityCreated(uint256 indexed id, string name, uint256 pointReward);
     event StudentRewarded(uint256 indexed activityId, address indexed student, uint256 pointReward);
     event CertificateMinted(uint256 indexed activityId, address indexed student, uint256 tokenId, string uri);
     event CertUriSet(uint256 indexed activityId, string uri);
     event CertificateClaimed(uint256 indexed activityId, address indexed student, uint256 tokenId);
+    event CertificateRequested(uint256 indexed activityId, address indexed student);
+    event CertificateApproved(uint256 indexed activityId, address indexed student, uint256 tokenId);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Not contract owner");
@@ -125,5 +131,71 @@ contract ActivityManager {
         uint256 tokenId = activityCert.mintCertificate(student, uri);
         emit CertificateMinted(activityId, student, tokenId, uri);
     }
-}
 
+    // ===== NEW: Certificate Request & Approval System =====
+
+    // Mahasiswa request sertifikat untuk kegiatan
+    function requestCertificate(uint256 activityId) external {
+        Activity memory a = activities[activityId];
+        require(a.id != 0, "Activity not found");
+        require(a.isActive, "Activity not active");
+        require(!hasRequested[activityId][msg.sender], "Already requested");
+        require(!hasClaimed[activityId][msg.sender], "Already has certificate");
+
+        hasRequested[activityId][msg.sender] = true;
+        _requesters[activityId].push(msg.sender);
+
+        emit CertificateRequested(activityId, msg.sender);
+    }
+
+    // Get daftar pending requests untuk admin (returns array of addresses)
+    function getPendingRequests(uint256 activityId) external view returns (address[] memory) {
+        address[] memory allRequesters = _requesters[activityId];
+        
+        // Count pending (requested but not claimed)
+        uint256 pendingCount = 0;
+        for (uint256 i = 0; i < allRequesters.length; i++) {
+            if (hasRequested[activityId][allRequesters[i]] && !hasClaimed[activityId][allRequesters[i]]) {
+                pendingCount++;
+            }
+        }
+        
+        // Build pending array
+        address[] memory pending = new address[](pendingCount);
+        uint256 index = 0;
+        for (uint256 i = 0; i < allRequesters.length; i++) {
+            if (hasRequested[activityId][allRequesters[i]] && !hasClaimed[activityId][allRequesters[i]]) {
+                pending[index] = allRequesters[i];
+                index++;
+            }
+        }
+        
+        return pending;
+    }
+
+    // Get total pending request count untuk activity
+    function getPendingRequestCount(uint256 activityId) external view returns (uint256) {
+        address[] memory allRequesters = _requesters[activityId];
+        uint256 count = 0;
+        for (uint256 i = 0; i < allRequesters.length; i++) {
+            if (hasRequested[activityId][allRequesters[i]] && !hasClaimed[activityId][allRequesters[i]]) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    // Admin approve request dan mint sertifikat
+    function approveCertificateRequest(uint256 activityId, address student) external onlyOwner {
+        Activity memory a = activities[activityId];
+        require(a.id != 0, "Activity not found");
+        require(bytes(a.certUri).length > 0, "Certificate template not set");
+        require(hasRequested[activityId][student], "Student has not requested");
+        require(!hasClaimed[activityId][student], "Already has certificate");
+
+        hasClaimed[activityId][student] = true;
+        uint256 tokenId = activityCert.mintCertificate(student, a.certUri);
+        
+        emit CertificateApproved(activityId, student, tokenId);
+    }
+}

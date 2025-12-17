@@ -192,6 +192,17 @@
                     </div>
 
                     <div class="admin-sections">
+                        <!-- Waiting List Section -->
+                        <div class="admin-card waiting-list-card">
+                            <h3>🔔 Waiting List Sertifikat</h3>
+                            <p>Request sertifikat dari mahasiswa yang menunggu persetujuan</p>
+                            <div id="waitingListContainer">
+                                <div class="empty-state">
+                                    <p>Memuat waiting list...</p>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Create Activity -->
                         <div class="admin-card">
                             <h3>Buat Kegiatan Baru</h3>
@@ -293,7 +304,7 @@
         </div>
     </div>
 
-    <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
     <script src="js/contracts.js"></script>
     <script src="js/web3-utils.js"></script>
     <script src="js/app.js"></script>
