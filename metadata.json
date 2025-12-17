@@ -1,0 +1,9 @@
+{
+    "name": "Sertifikat Seminar Web3",
+    "description": "Mahasiswa ini telah mengikuti Seminar Web3 pada tanggal 3 Desember 2025",
+    "image": "https://ipfs.io/ipfs/<hash-file-gambar>",
+    "attributes": [
+        { "trait_type": "Kategori", "value": "Seminar" },
+        { "trait_type": "Poin Diterima", "value": 100 }
+    ]
+}

@@ -539,7 +539,7 @@ class CampusPointApp {
             return;
         }
 
-        if (!ethers.utils.isAddress(studentAddress)) {
+        if (!window.ethers.isAddress(studentAddress)) {
             this.showToast('Alamat wallet tidak valid', 'error');
             return;
         }

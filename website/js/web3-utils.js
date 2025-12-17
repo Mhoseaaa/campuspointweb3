@@ -3,6 +3,8 @@
  * Helper functions for wallet connection, IPFS, and blockchain interactions
  */
 
+// import { ethers } from "ethers";
+
 class Web3Utils {
     constructor() {
         this.provider = null;
@@ -41,8 +43,8 @@ class Web3Utils {
             await this.switchToSepolia();
 
             // Setup ethers provider and signer
-            this.provider = new ethers.providers.Web3Provider(window.ethereum);
-            this.signer = this.provider.getSigner();
+            this.provider = new window.ethers.BrowserProvider(window.ethereum);
+            this.signer = await this.provider.getSigner();
             this.userAddress = accounts[0];
             this.isConnected = true;
 
