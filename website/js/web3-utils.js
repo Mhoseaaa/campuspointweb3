@@ -37,8 +37,8 @@ class Web3Utils {
                 throw new Error('Tidak ada akun yang dipilih');
             }
 
-            // Check and switch to Sepolia network
-            await this.switchToSepolia();
+            // Check and switch to correct network
+            await this.switchToNetwork();
 
             // Setup ethers provider and signer
             this.provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -63,9 +63,9 @@ class Web3Utils {
     }
 
     /**
-     * Switch to Sepolia network
+     * Switch to configured network (Ganache)
      */
-    async switchToSepolia() {
+    async switchToNetwork() {
         const config = window.ContractConfig.network;
 
         try {
@@ -89,6 +89,31 @@ class Web3Utils {
             } else {
                 throw switchError;
             }
+        }
+    }
+
+    /**
+     * Get current network name
+     */
+    async getNetworkName() {
+        if (!this.provider) return 'Not Connected';
+
+        try {
+            const network = await this.provider.getNetwork();
+            const chainId = network.chainId;
+
+            // Common network names
+            const networks = {
+                1: 'Ethereum Mainnet',
+                5: 'Goerli Testnet',
+                11155111: 'Sepolia Testnet',
+                1337: 'Ganache Local',
+                5777: 'Ganache Local'
+            };
+
+            return networks[chainId] || `Chain ID: ${chainId}`;
+        } catch (error) {
+            return 'Unknown';
         }
     }
 
@@ -381,6 +406,85 @@ class Web3Utils {
         }
 
         const tx = await this.contracts.activityManager.mintCertificate(activityId, studentAddress, uri);
+        await tx.wait();
+        return tx;
+    }
+
+    /**
+     * Set certificate URI template (admin only)
+     */
+    async setActivityCertUri(activityId, uri) {
+        if (!this.contracts.activityManager) {
+            throw new Error('Contract belum dikonfigurasi');
+        }
+
+        const tx = await this.contracts.activityManager.setActivityCertUri(activityId, uri);
+        await tx.wait();
+        return tx;
+    }
+
+    /**
+     * Verify token - get owner and URI by tokenId
+     */
+    async verifyToken(tokenId) {
+        if (!this.contracts.activityCertificate) {
+            throw new Error('Contract belum dikonfigurasi');
+        }
+
+        const owner = await this.contracts.activityCertificate.ownerOf(tokenId);
+        const tokenUri = await this.contracts.activityCertificate.tokenURI(tokenId);
+
+        return {
+            tokenId: tokenId,
+            owner: owner,
+            tokenUri: tokenUri
+        };
+    }
+
+    /**
+     * Get activities that user can claim certificate for
+     */
+    async getClaimableActivities(address = null) {
+        const targetAddress = address || this.userAddress;
+        if (!targetAddress || !this.contracts.activityManager) return [];
+
+        try {
+            const nextId = await this.contracts.activityManager.nextActivityId();
+            const claimable = [];
+
+            for (let i = 1; i < nextId; i++) {
+                try {
+                    const canClaim = await this.contracts.activityManager.canClaimCertificate(i, targetAddress);
+                    if (canClaim) {
+                        const activity = await this.contracts.activityManager.getActivity(i);
+                        claimable.push({
+                            id: activity.id.toString(),
+                            name: activity.name,
+                            pointReward: activity.pointReward.toString(),
+                            certUri: activity.certUri
+                        });
+                    }
+                } catch (e) {
+                    continue;
+                }
+            }
+
+            return claimable;
+        } catch (error) {
+            console.error('Error getting claimable activities:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Claim certificate (student)
+     */
+    async claimCertificate(activityId) {
+        if (!this.contracts.activityManager) {
+            throw new Error('Contract belum dikonfigurasi');
+        }
+
+        const tx = await this.contracts.activityManager.claimCertificate(activityId);
         await tx.wait();
         return tx;
     }

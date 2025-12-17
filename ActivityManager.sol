@@ -16,6 +16,7 @@ contract ActivityManager {
         string  name;
         uint256 pointReward;
         bool    isActive;
+        string  certUri;  // Template URI sertifikat (diset admin)
     }
 
     address public owner;
@@ -24,10 +25,17 @@ contract ActivityManager {
 
     uint256 public nextActivityId = 1;
     mapping(uint256 => Activity) public activities;
+    
+    // Tracking: mahasiswa mana yang sudah dapat reward untuk activity mana
+    mapping(uint256 => mapping(address => bool)) public hasRewarded;
+    // Tracking: mahasiswa mana yang sudah klaim sertifikat untuk activity mana
+    mapping(uint256 => mapping(address => bool)) public hasClaimed;
 
     event ActivityCreated(uint256 indexed id, string name, uint256 pointReward);
     event StudentRewarded(uint256 indexed activityId, address indexed student, uint256 pointReward);
     event CertificateMinted(uint256 indexed activityId, address indexed student, uint256 tokenId, string uri);
+    event CertUriSet(uint256 indexed activityId, string uri);
+    event CertificateClaimed(uint256 indexed activityId, address indexed student, uint256 tokenId);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Not contract owner");
@@ -48,10 +56,18 @@ contract ActivityManager {
             id: activityId,
             name: name,
             pointReward: pointReward,
-            isActive: true
+            isActive: true,
+            certUri: ""
         });
 
         emit ActivityCreated(activityId, name, pointReward);
+    }
+
+    // Admin set template URI sertifikat untuk kegiatan
+    function setActivityCertUri(uint256 activityId, string calldata uri) external onlyOwner {
+        require(activities[activityId].id != 0, "Activity not found");
+        activities[activityId].certUri = uri;
+        emit CertUriSet(activityId, uri);
     }
 
     function setActivityActive(uint256 activityId, bool active) external onlyOwner {
@@ -62,10 +78,15 @@ contract ActivityManager {
     function getActivity(uint256 activityId)
         external
         view
-        returns (uint256 id, string memory name, uint256 pointReward, bool isActive)
+        returns (uint256 id, string memory name, uint256 pointReward, bool isActive, string memory certUri)
     {
         Activity memory a = activities[activityId];
-        return (a.id, a.name, a.pointReward, a.isActive);
+        return (a.id, a.name, a.pointReward, a.isActive, a.certUri);
+    }
+
+    // Cek apakah mahasiswa eligible untuk klaim sertifikat
+    function canClaimCertificate(uint256 activityId, address student) external view returns (bool) {
+        return hasRewarded[activityId][student] && !hasClaimed[activityId][student];
     }
 
     // Berikan poin ke mahasiswa untuk suatu kegiatan
@@ -74,17 +95,33 @@ contract ActivityManager {
         require(a.id != 0, "Activity not found");
         require(a.isActive, "Activity not active");
         require(student != address(0), "Invalid student address");
+        require(!hasRewarded[activityId][student], "Student already rewarded");
 
+        hasRewarded[activityId][student] = true;
         campusPoint.mint(student, a.pointReward);
         emit StudentRewarded(activityId, student, a.pointReward);
     }
 
-    // Mint sertifikat NFT untuk mahasiswa
+    // Mahasiswa klaim sertifikat sendiri (jika sudah dapat reward)
+    function claimCertificate(uint256 activityId) external {
+        Activity memory a = activities[activityId];
+        require(a.id != 0, "Activity not found");
+        require(bytes(a.certUri).length > 0, "Certificate template not set");
+        require(hasRewarded[activityId][msg.sender], "Not eligible - no reward received");
+        require(!hasClaimed[activityId][msg.sender], "Already claimed");
+
+        hasClaimed[activityId][msg.sender] = true;
+        uint256 tokenId = activityCert.mintCertificate(msg.sender, a.certUri);
+        emit CertificateClaimed(activityId, msg.sender, tokenId);
+    }
+
+    // Mint sertifikat NFT untuk mahasiswa (admin direct mint - tetap dipertahankan)
     function mintCertificate(uint256 activityId, address student, string calldata uri) external onlyOwner {
         Activity memory a = activities[activityId];
         require(a.id != 0, "Activity not found");
         require(student != address(0), "Invalid student address");
 
+        hasClaimed[activityId][student] = true;  // Mark as claimed
         uint256 tokenId = activityCert.mintCertificate(student, uri);
         emit CertificateMinted(activityId, student, tokenId, uri);
     }

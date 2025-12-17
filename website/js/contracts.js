@@ -1,15 +1,13 @@
-// Smart Contract Addresses - Update these after deploying to Sepolia
+// Smart Contract Addresses - Update these after deploying to Ganache
 const CONTRACT_ADDRESSES = {
     CAMPUS_POINT: '0x0000000000000000000000000000000000000000', // Update after deployment
     ACTIVITY_CERTIFICATE: '0x0000000000000000000000000000000000000000', // Update after deployment
     ACTIVITY_MANAGER: '0x0000000000000000000000000000000000000000' // Update after deployment
 };
 
-// Network Configuration - Change to match your network
-// For Ganache Local: chainId '0x539' (1337) or '0x1691' (5777)
-// For Sepolia: chainId '0xaa36a7' (11155111)
+// Network Configuration - Ganache Local
 const NETWORK_CONFIG = {
-    chainId: '0x539', // Ganache default (1337 in hex) - Change to '0xaa36a7' for Sepolia
+    chainId: '0x539', // Ganache default (1337 in hex)
     chainName: 'Ganache Local',
     rpcUrls: ['http://127.0.0.1:7545'],
     nativeCurrency: {
@@ -66,21 +64,28 @@ const ACTIVITY_CERTIFICATE_ABI = [
     "event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId)"
 ];
 
-// ActivityManager ABI
+// ActivityManager ABI (Updated with claim feature)
 const ACTIVITY_MANAGER_ABI = [
     "function owner() view returns (address)",
     "function campusPoint() view returns (address)",
     "function activityCert() view returns (address)",
     "function nextActivityId() view returns (uint256)",
-    "function activities(uint256) view returns (uint256 id, string name, uint256 pointReward, bool isActive)",
-    "function getActivity(uint256 activityId) view returns (uint256 id, string name, uint256 pointReward, bool isActive)",
+    "function activities(uint256) view returns (uint256 id, string name, uint256 pointReward, bool isActive, string certUri)",
+    "function getActivity(uint256 activityId) view returns (uint256 id, string name, uint256 pointReward, bool isActive, string certUri)",
+    "function hasRewarded(uint256 activityId, address student) view returns (bool)",
+    "function hasClaimed(uint256 activityId, address student) view returns (bool)",
+    "function canClaimCertificate(uint256 activityId, address student) view returns (bool)",
     "function createActivity(string name, uint256 pointReward)",
+    "function setActivityCertUri(uint256 activityId, string uri)",
     "function setActivityActive(uint256 activityId, bool active)",
     "function rewardStudent(uint256 activityId, address student)",
+    "function claimCertificate(uint256 activityId)",
     "function mintCertificate(uint256 activityId, address student, string uri)",
     "event ActivityCreated(uint256 indexed id, string name, uint256 pointReward)",
     "event StudentRewarded(uint256 indexed activityId, address indexed student, uint256 pointReward)",
-    "event CertificateMinted(uint256 indexed activityId, address indexed student, uint256 tokenId, string uri)"
+    "event CertificateMinted(uint256 indexed activityId, address indexed student, uint256 tokenId, string uri)",
+    "event CertUriSet(uint256 indexed activityId, string uri)",
+    "event CertificateClaimed(uint256 indexed activityId, address indexed student, uint256 tokenId)"
 ];
 
 // Export for use in other files

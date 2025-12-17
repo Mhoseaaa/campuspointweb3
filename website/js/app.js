@@ -169,6 +169,15 @@ class CampusPointApp {
             });
         }
 
+        // Set Certificate URI Form
+        const setCertUriForm = document.getElementById('setCertUriForm');
+        if (setCertUriForm) {
+            setCertUriForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleSetCertUri();
+            });
+        }
+
         // Reward Student Form
         const rewardStudentForm = document.getElementById('rewardStudentForm');
         if (rewardStudentForm) {
@@ -184,6 +193,15 @@ class CampusPointApp {
             mintCertificateForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 this.handleMintCertificate();
+            });
+        }
+
+        // Verify Token Form
+        const verifyTokenForm = document.getElementById('verifyTokenForm');
+        if (verifyTokenForm) {
+            verifyTokenForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleVerifyToken();
             });
         }
     }
@@ -219,13 +237,36 @@ class CampusPointApp {
     /**
      * Update wallet UI after connection
      */
-    updateWalletUI(address) {
+    async updateWalletUI(address) {
         const btn = document.getElementById('connectWallet');
         const btnText = document.getElementById('walletButtonText');
+        const walletInfo = document.getElementById('walletInfo');
+        const displayAddress = document.getElementById('displayAddress');
+        const displayNetwork = document.getElementById('displayNetwork');
+        const sidebarNetworkName = document.getElementById('sidebarNetworkName');
 
         btn.disabled = false;
         btnText.textContent = window.web3Utils.shortenAddress(address);
         btn.classList.add('connected');
+
+        // Show wallet info section
+        if (walletInfo) {
+            walletInfo.style.display = 'flex';
+        }
+
+        // Display address
+        if (displayAddress) {
+            displayAddress.textContent = window.web3Utils.shortenAddress(address);
+        }
+
+        // Display network name
+        const networkName = await window.web3Utils.getNetworkName();
+        if (displayNetwork) {
+            displayNetwork.textContent = networkName;
+        }
+        if (sidebarNetworkName) {
+            sidebarNetworkName.textContent = networkName;
+        }
     }
 
     /**
@@ -332,6 +373,9 @@ class CampusPointApp {
      */
     async loadCertificatesData() {
         const container = document.getElementById('certificatesList');
+
+        // Also load claimable activities
+        await this.loadClaimableActivities();
 
         try {
             container.innerHTML = '<div class="empty-state"><span class="loading"></span> Memuat sertifikat...</div>';
@@ -560,6 +604,128 @@ class CampusPointApp {
 
         } catch (error) {
             this.showToast('Gagal menerbitkan sertifikat: ' + (error.reason || error.message), 'error');
+        }
+    }
+
+    /**
+     * Handle set certificate URI template
+     */
+    async handleSetCertUri() {
+        const activityIdInput = document.getElementById('certUriActivityId');
+        const uriInput = document.getElementById('certTemplateUri');
+
+        const activityId = parseInt(activityIdInput.value);
+        const uri = uriInput.value.trim();
+
+        if (!activityId || !uri) {
+            this.showToast('Lengkapi semua field', 'warning');
+            return;
+        }
+
+        try {
+            this.showToast('Menyimpan template sertifikat...', 'warning');
+
+            await window.web3Utils.setActivityCertUri(activityId, uri);
+
+            this.showToast('Template sertifikat berhasil disimpan!', 'success');
+            activityIdInput.value = '';
+            uriInput.value = '';
+
+        } catch (error) {
+            this.showToast('Gagal menyimpan template: ' + (error.reason || error.message), 'error');
+        }
+    }
+
+    /**
+     * Handle verify token
+     */
+    async handleVerifyToken() {
+        const tokenIdInput = document.getElementById('verifyTokenId');
+        const tokenId = parseInt(tokenIdInput.value);
+
+        if (!tokenId) {
+            this.showToast('Masukkan Token ID', 'warning');
+            return;
+        }
+
+        const resultDiv = document.getElementById('verifyResult');
+        const resultTokenId = document.getElementById('resultTokenId');
+        const resultOwner = document.getElementById('resultOwner');
+        const resultTokenUri = document.getElementById('resultTokenUri');
+
+        try {
+            resultDiv.style.display = 'block';
+            resultTokenId.textContent = 'Loading...';
+            resultOwner.textContent = 'Loading...';
+            resultTokenUri.textContent = 'Loading...';
+
+            const result = await window.web3Utils.verifyToken(tokenId);
+
+            resultTokenId.textContent = result.tokenId;
+            resultOwner.textContent = result.owner;
+            resultTokenUri.textContent = result.tokenUri;
+
+            this.showToast('Verifikasi berhasil!', 'success');
+
+        } catch (error) {
+            resultDiv.style.display = 'none';
+            this.showToast('Token tidak ditemukan atau error: ' + (error.reason || error.message), 'error');
+        }
+    }
+
+    /**
+     * Load claimable activities for certificates page
+     */
+    async loadClaimableActivities() {
+        const container = document.getElementById('claimableList');
+        if (!container) return;
+
+        try {
+            const claimable = await window.web3Utils.getClaimableActivities();
+
+            if (claimable.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>Tidak ada sertifikat yang bisa diklaim saat ini.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = claimable.map(activity => `
+                <div class="claimable-item">
+                    <div class="claimable-info">
+                        <h4>${activity.name}</h4>
+                        <span>+${activity.pointReward} CPNT • ID: ${activity.id}</span>
+                    </div>
+                    <button class="btn btn-claim" onclick="app.handleClaimCertificate(${activity.id})">
+                        Klaim Sertifikat
+                    </button>
+                </div>
+            `).join('');
+
+        } catch (error) {
+            console.error('Error loading claimable activities:', error);
+        }
+    }
+
+    /**
+     * Handle claim certificate
+     */
+    async handleClaimCertificate(activityId) {
+        try {
+            this.showToast('Mengklaim sertifikat...', 'warning');
+
+            await window.web3Utils.claimCertificate(activityId);
+
+            this.showToast('Sertifikat berhasil diklaim!', 'success');
+
+            // Reload claimable and certificates
+            await this.loadClaimableActivities();
+            await this.loadCertificatesData();
+
+        } catch (error) {
+            this.showToast('Gagal mengklaim sertifikat: ' + (error.reason || error.message), 'error');
         }
     }
 

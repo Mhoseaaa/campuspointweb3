@@ -1,0 +1,259 @@
+ 
+MODUL TUGAS AKHIR WEB3APP 
+Integrasi Token ERC20 dan NFT ERC721 untuk Sistem 
+Poin & Sertifikat Mahasiswa​
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Program Studi Informatika​
+Fakultas Teknologi Informasi 
+Universitas Kristen Duta Wacana​
+2025 
+ 
+ 
+Bab I – Pendahuluan 
+Latar Belakang 
+Modul praktikum ini disusun untuk membantu mahasiswa memahami konsep dasar dan 
+penerapan teknologi Web3, khususnya penggunaan smart contract Ethereum, token 
+ERC20, dan NFT ERC721 dalam sebuah studi kasus yang dekat dengan konteks akademik: 
+Sistem Poin dan Sertifikat Kegiatan Mahasiswa.​
+Praktikum ini melatih mahasiswa untuk mengembangkan Web3App sederhana yang 
+berinteraksi dengan jaringan blockchain lokal melalui MetaMask dan Ganache. 
+Tujuan Pembelajaran 
+Setelah menyelesaikan praktikum ini, mahasiswa diharapkan mampu: 
+1.​ Menjelaskan konsep dasar Web3, smart contract, ERC20, dan ERC721. 
+2.​ Memahami protokol ERC20 (balanceOf, transfer, allowance, approve, transferFrom, 
+dsb.). 
+3.​ Memahami protokol ERC721 (tokenId, ownerOf, safeMint, tokenURI, dsb.). 
+4.​ Memahami business process suatu aplikasi yang memanfaatkan: 
+○​ Token ERC20 sebagai poin atau kredit. 
+○​ NFT ERC721 sebagai sertifikat unik (ijazah / sertifikat kegiatan). 
+5.​ Membangun sebuah Web3App (frontend sederhana berbasis web) yang: 
+○​ Terkoneksi ke MetaMask pada jaringan lokal Ganache. 
+○​ Berinteraksi dengan smart contract ERC20 dan ERC721 melalui 
+fungsi-fungsi yang disediakan. 
+6.​ Menyusun laporan praktikum dan melakukan presentasi akhir mengenai solusi 
+yang dibangun. 
+Alat dan Bahan 
+Prasyarat Pengetahuan 
+Mahasiswa diharapkan sudah: 
+●​ Menguasai dasar-dasar: 
+○​ HTML, CSS, JavaScript. 
+○​ Konsep dasar blockchain dan Ethereum. 
+●​ Pernah melihat / mencoba: 
+○​ Remix IDE (minimal untuk compile & deploy smart contract sederhana). 
+○​ MetaMask (install dan mengganti network). 
+ 
+ 
+ 
+2 
+Tools yang Digunakan 
+1.​ Ganache (GUI atau CLI) – sebagai jaringan blockchain lokal. 
+2.​ MetaMask – wallet untuk koneksi Web3 dari browser. 
+3.​ Remix IDE – untuk menulis, compile, dan deploy smart contract. 
+4.​ Browser (Chrome/Firefox) – untuk menjalankan Web3App. 
+5.​ (Opsional) VS Code + Live Server – untuk menghosting frontend lokal. 
+ 
+3 
+Bab II – Studi Kasus 
+Deskripsi Umum 
+Sebuah universitas ingin membangun sistem digital untuk: 
+●​ Mencatat partisipasi mahasiswa dalam berbagai kegiatan (seminar, pelatihan, 
+lomba, dsb). 
+●​ Memberikan poin kepada mahasiswa sebagai bentuk apresiasi. 
+●​ Mengeluarkan sertifikat digital unik untuk kegiatan tertentu yang dapat 
+diverifikasi secara on-chain. 
+Manajemen universitas ingin: 
+1.​ Menggunakan token ERC20 sebagai “CampusPoint”, yaitu poin yang diberikan ke 
+mahasiswa setelah mengikuti kegiatan. 
+2.​ Menggunakan NFT ERC721 sebagai “ActivityCertificate”, yaitu sertifikat unik yang: 
+○​ Mencerminkan partisipasi mahasiswa pada sebuah kegiatan tertentu. 
+○​ Mencantumkan metadata (judul kegiatan, tanggal, keterangan) dalam 
+bentuk tokenURI (misalnya URL JSON di IPFS). 
+Aktor dan Peran 
+Admin / Panitia Kegiatan: 
+●​ Mendaftarkan kegiatan. 
+●​ Memberikan CampusPoint ke mahasiswa yang hadir. 
+●​ Menerbitkan NFT sertifikat. 
+Mahasiswa: 
+●​ Login menggunakan wallet (MetaMask). 
+●​ Melihat saldo CampusPoint. 
+●​ Mengajukan / mengklaim sertifikat (jika memenuhi syarat). 
+●​ Melihat daftar sertifikat (NFT) yang dimiliki. 
+Alur Proses Bisnis 
+1.​ Admin mengelola token & sertifikat 
+○​ Deploy CampusPoint (ERC20). 
+○​ Deploy ActivityCertificate (ERC721). 
+○​ Deploy ActivityManager sebagai kontrak yang menghubungkan keduanya. 
+2.​ Kegiatan berlangsung 
+○​ Admin menambahkan definisi kegiatan: id kegiatan, nama, deskripsi, jumlah 
+poin. 
+○​ Setelah kegiatan, admin memanggil fungsi untuk memberi CampusPoint ke 
+alamat mahasiswa yang hadir. 
+3.​ Mahasiswa melihat saldo dan sertifikat 
+○​ Melalui Web3App, mahasiswa: 
+■​ Login dengan MetaMask. 
+4 
+■​ Melihat saldo token ERC20. 
+■​ Melihat daftar kegiatan yang diikuti / poin yang diterima. 
+4.​ Penerbitan sertifikat (NFT) 
+○​ Admin memanggil fungsi di ActivityManager untuk: 
+■​ Menerbitkan NFT sertifikat kepada mahasiswa (mint NFT ke 
+address mahasiswa). 
+■​ Mengisi tokenURI ke metadata sertifikat. 
+5.​ Mahasiswa dapat memverifikasi kepemilikan sertifikat 
+○​ Melalui Web3App, mahasiswa dapat: 
+■​ Melihat daftar tokenId NFT yang dia miliki. 
+■​ Melihat tokenURI untuk setiap NFT. 
+ 
+Gambar 1. Blok Proses Bisnis Studi Kasus
+ 
+5 
+Bab III – Perancangan Smart Contract 
+Arsitektur Kontrak 
+Sistem terdiri dari tiga kontrak: 
+1.​ CampusPoint (ERC20) 
+○​ Token poin mahasiswa 
+○​ Owner dapat melakukan mint 
+2.​ ActivityCertificate (ERC721) 
+○​ Sertifikat kegiatan mahasiswa 
+○​ mintCertificate() menghasilkan NFT 
+3.​ ActivityManager 
+○​ Menghubungkan ERC20 dan ERC721 
+○​ Mengelola kegiatan 
+○​ Memberi poin & sertifikat 
+Daftar Fungsi Utama 
+CampusPoint (ERC20) 
+●​ balanceOf(address) 
+●​ transfer(address, amount) 
+●​ approve(address, amount) 
+●​ transferFrom(address, amount) 
+●​ mint(address, amount) (owner only) 
+ActivityCertificate (ERC721) 
+●​ mintCertificate(address, tokenURI) 
+●​ ownerOf(tokenId) 
+●​ tokenURI(tokenId) 
+ActivityManager 
+●​ createActivity(name, pointReward) 
+●​ rewardStudent(activityId, studentAddress) 
+●​ mintCertificate(activityId, studentAddress, tokenURI) 
+ 
+6 
+Bab IV – Implementasi Smart Contract 
+Setup Ganache dan MetaMask 
+1.​ Jalankan Ganache (port 7545 atau default). 
+2.​ Tambah jaringan ke MetaMask: 
+●​ RPC URL: http://127.0.0.1:7545 
+●​ Chain ID: 1337 
+3.​ Import salah satu private key dari Ganache ke MetaMask. 
+Deploy via Remix 
+1.​ Buka Remix 
+2.​ Paste tiga kontrak (di Lampiran A): 
+●​ CampusPoint.sol 
+●​ ActivityCertificate.sol 
+●​ ActivityManager.sol 
+3.​ Compile menggunakan Solidity 0.8.x 
+4.​ Deploy urutan: 
+●​ Deploy ERC20 
+●​ Deploy ERC721 
+●​ Deploy ActivityManager (masukkan alamat 2 kontrak sebelumnya) 
+Pengujian Awal di Remix 
+●​ Buat aktivitas:​
+ createActivity("Seminar Web3", 100) 
+●​ Beri poin:​
+ rewardStudent(1, <alamat_mahasiswa>) 
+●​ Beri sertifikat:​
+ mintCertificate(1, <alamat_mahasiswa>, "<URL metadata>") 
+ 
+7 
+Bab V – Pengembangan Web3App (Frontend) 
+Fitur Minimal 
+1.​ Connect wallet MetaMask 
+2.​ Menampilkan: 
+●​ Address 
+●​ Network 
+●​ Saldo token ERC20 
+3.​ Melihat daftar sertifikat (input tokenId lalu cek owner & tokenURI) 
+Teknologi Frontend 
+-​
+HTML + CSS + JavaScript 
+-​
+library ethers.js atau web3.js 
+Diagram Alur Interaksi Dasar Web3App 
+1.​ User klik Connect Wallet 
+2.​ Browser meminta MetaMask membuka koneksi 
+3.​ Web memuat ABI dan address smart contract 
+4.​ Web melakukan query: 
+●​ balanceOf 
+●​ ownerOf 
+●​ tokenURI 
+ 
+8 
+Bab VI – Pengujian Sistem 
+Skenario Pengujian 
+1.​ Mahasiswa login menggunakan koneksi ke Wallet sehingga wallet terhubung 
+2.​ Saldo CampusPoint tampil benar 
+3.​ Admin reward mahasiswa sehingga saldonya bertambah 
+4.​ Admin mint NFT untuk menambahkan sertifikat baru diterima 
+5.​ Mahasiswa dapat melihat tokenURI sertifikat 
+Screenshot Wajib 
+●​ Deploy kontrak 
+●​ Hasil mint token 
+●​ Hasil mint NFT 
+●​ Tampilan Web3App 
+ 
+9 
+Bab VII – Presentasi Akhir 
+Presentasi Akhir 
+Setiap mahasiswa/kelompok wajib menampilkan dalam bentuk slide presentasi: 
+1.​ Penjelasan business process 
+2.​ Arsitektur & penjelasan smart contract 
+3.​ Tantangan teknis yang dihadapi 
+4.​ Rencana pengembangan lanjutan 
+Slide presentasi wajib dikumpulkan di eclass UKDW paling lambat tanggal 17 Desember 
+2025 pukul 23.59 WIB. 
+Demo untuk aplikasi Web3 dilaksanakan secara berkelompok. Setiap anggota 
+kelompok harus melakukan presentasi bagiannya untuk mendapatkan nilai, jika 
+tidak hadir atau tidak mempresentasikan bagiannya maka tidak akan mendapat nilai 
+Tugas Akhir. 
+Jadwal presentasi akan ditentukan secara acak pada hari pelaksanaan Test Akhir Semester 
+sesuai dengan jadwal dari Program Studi, yaitu pada Kamis, 18 Desember 2025 pukul 
+10.30 - 15.00 WIB. 
+ 
+10 
+LAMPIRAN A — KODE LENGKAP SMART CONTRACT 
+Disertakan sesuai hasil penyusunan sebelumnya: 
+✔ CampusPoint (ERC20) 
+(https://drive.google.com/file/d/1id_4Y7RyYw7I0aNK-bJGumebtZdYmkIE/view?usp=shari
+ng)​
+ ✔ ActivityCertificate (ERC721) 
+(https://drive.google.com/file/d/1w5Rg6782OWcn1GlCLmjWe-Uc27tOV7_X/view?usp=sha
+ring)​
+ ✔ ActivityManager 
+(https://drive.google.com/file/d/1-9ubhGgh3I1t85QGcB7_y9yKKhqiivDE/view?usp=sharin
+g) 
+ 
+ 
+11 
+LAMPIRAN B — Contoh Metadata Sertifikat (NFT 
+Metadata JSON) 
+{ 
+  "name": "Sertifikat Seminar Web3", 
+  "description": "Mahasiswa ini telah mengikuti Seminar Web3 pada 
+tanggal 3 Desember 2025", 
+  "image": "https://ipfs.io/ipfs/<hash-file-gambar>", 
+  "attributes": [ 
+    { "trait_type": "Kategori", "value": "Seminar" }, 
+    { "trait_type": "Poin Diterima", "value": 100 } 
+  ] 
+} 
+ 
+ 
+12 
