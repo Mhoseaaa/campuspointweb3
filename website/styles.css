@@ -166,6 +166,10 @@ select {
     transition: all var(--transition-fast);
 }
 
+.nav-item:nth-last-child(1) {
+    display: none;
+}
+
 .nav-item:hover {
     background-color: var(--bg-hover);
     color: var(--text-secondary);
@@ -214,7 +218,15 @@ select {
     border: 1px solid var(--border-color);
 }
 
-.network-dot {
+.dot-red {
+    width: 6px;
+    height: 6px;
+    background-color: var(--error);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--error);
+}
+
+.dot-green {
     width: 6px;
     height: 6px;
     background-color: var(--success);

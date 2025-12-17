@@ -337,6 +337,10 @@ class Web3Utils {
      * Check if user is contract owner
      */
     async isContractOwner() {
+        console.log("Mengecek status admin...");
+        if (!this.userAddress) { console.log("Gagal: User address kosong"); return false; }
+        if (!this.contracts.activityManager) { console.log("Gagal: Kontrak ActivityManager tidak ditemukan"); return false; }
+
         if (!this.userAddress || !this.contracts.activityManager) return false;
 
         try {

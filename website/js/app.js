@@ -9,13 +9,21 @@ class CampusPointApp {
         this.isWalletConnected = false;
         this.isOwner = false;
 
+        // Daftar mapping Chain ID (Hex) ke Nama Jaringan
+        this.networkMap = {
+            "0x1": "Ethereum Mainnet",
+            "0xaa36a7": "Sepolia Testnet",
+            "0x539": "Ganache Local (1337)",
+            "0x1691": "Ganache GUI (5777)"
+        };
+
         this.init();
     }
 
     /**
      * Initialize the application
      */
-    init() {
+    async init() {
         // Setup routing
         this.setupRouting();
 
@@ -24,6 +32,12 @@ class CampusPointApp {
 
         // Check initial hash
         this.handleHashChange();
+
+        // Panggil update badge saat pertama kali load
+        await this.updateNetworkBadge();
+        
+        // Pasang listener agar otomatis update jika user ganti network
+        this.setupNetworkListeners();
     }
 
     /**
@@ -188,6 +202,20 @@ class CampusPointApp {
         }
     }
 
+    setupNetworkListeners() {
+        if (window.ethereum) {
+            window.ethereum.on('chainChanged', async () => {
+                console.log("Network diganti, update badge...");
+                await this.updateNetworkBadge();
+                // Opsional: window.location.reload(); 
+            });
+
+            window.ethereum.on('accountsChanged', async () => {
+                await this.updateNetworkBadge();
+            });
+        }
+    }
+
     /**
      * Handle wallet connection
      */
@@ -226,6 +254,32 @@ class CampusPointApp {
         btn.disabled = false;
         btnText.textContent = window.web3Utils.shortenAddress(address);
         btn.classList.add('connected');
+    }
+
+    /**
+     * Update network badge after connection
+     */
+    async updateNetworkBadge() {
+        const networkNameEl = document.getElementById('network-name');
+        const networkDotEl = document.getElementById('network-dot');
+
+        if (window.ethereum && window.ethereum.selectedAddress) {
+            try {
+                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                
+                // Ambil nama dari map, jika tidak ada tampilkan ID-nya
+                const name = this.networkMap[chainId] || `Unknown (${chainId})`;
+                
+                networkNameEl.innerText = name;
+                networkDotEl.className = "dot-green"; // Ubah jadi hijau (CSS dot-green)
+            } catch (err) {
+                console.error("Gagal update badge:", err);
+            }
+        } else {
+            // Jika wallet belum connect
+            networkNameEl.innerText = "Not Connected";
+            networkDotEl.className = "dot-red"; // Tetap merah (CSS dot-red)
+        }
     }
 
     /**
@@ -381,7 +435,9 @@ class CampusPointApp {
             this.isOwner = await window.web3Utils.isContractOwner();
 
             if (!this.isOwner) {
+                const adminTab = document.getElementById('admin-tab');
                 const adminPage = document.getElementById('adminPage');
+                adminTab.style.display = 'block';
                 adminPage.innerHTML = `
                     <div class="page-header">
                         <h2>Akses Ditolak</h2>
