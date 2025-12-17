@@ -334,6 +334,42 @@ class Web3Utils {
     }
 
     /**
+     * Get ALL certificates (for admin view)
+     */
+    async getAllCertificates() {
+        if (!this.contracts.activityCertificate) return [];
+
+        try {
+            const certificates = [];
+            const nextTokenId = await this.contracts.activityCertificate.getNextTokenId();
+
+            for (let i = 1; i < nextTokenId; i++) {
+                try {
+                    const owner = await this.contracts.activityCertificate.ownerOf(i);
+                    const tokenUri = await this.contracts.activityCertificate.tokenURI(i);
+                    const metadata = await this.fetchIPFSMetadata(tokenUri);
+
+                    certificates.push({
+                        tokenId: i.toString(),
+                        owner: owner,
+                        tokenUri: tokenUri,
+                        metadata: metadata,
+                        imageUrl: metadata?.image ? this.ipfsToHttp(metadata.image) : null
+                    });
+                } catch (e) {
+                    // Token might not exist, continue
+                    continue;
+                }
+            }
+
+            return certificates;
+        } catch (error) {
+            console.error('Error getting all certificates:', error);
+            return [];
+        }
+    }
+
+    /**
      * Check if user is contract owner
      */
     async isContractOwner() {
