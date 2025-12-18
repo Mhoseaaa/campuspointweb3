@@ -3,6 +3,8 @@
  * Helper functions for wallet connection, IPFS, and blockchain interactions
  */
 
+// import { ethers } from "ethers";
+
 class Web3Utils {
     constructor() {
         this.provider = null;
@@ -41,8 +43,8 @@ class Web3Utils {
             await this.switchToSepolia();
 
             // Setup ethers provider and signer
-            this.provider = new ethers.providers.Web3Provider(window.ethereum);
-            this.signer = this.provider.getSigner();
+            this.provider = new window.ethers.BrowserProvider(window.ethereum);
+            this.signer = await this.provider.getSigner();
             this.userAddress = accounts[0];
             this.isConnected = true;
 
@@ -327,6 +329,42 @@ class Web3Utils {
             return certificates;
         } catch (error) {
             console.error('Error getting certificates:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Get ALL certificates (for admin view)
+     */
+    async getAllCertificates() {
+        if (!this.contracts.activityCertificate) return [];
+
+        try {
+            const certificates = [];
+            const nextTokenId = await this.contracts.activityCertificate.getNextTokenId();
+
+            for (let i = 1; i < nextTokenId; i++) {
+                try {
+                    const owner = await this.contracts.activityCertificate.ownerOf(i);
+                    const tokenUri = await this.contracts.activityCertificate.tokenURI(i);
+                    const metadata = await this.fetchIPFSMetadata(tokenUri);
+
+                    certificates.push({
+                        tokenId: i.toString(),
+                        owner: owner,
+                        tokenUri: tokenUri,
+                        metadata: metadata,
+                        imageUrl: metadata?.image ? this.ipfsToHttp(metadata.image) : null
+                    });
+                } catch (e) {
+                    // Token might not exist, continue
+                    continue;
+                }
+            }
+
+            return certificates;
+        } catch (error) {
+            console.error('Error getting all certificates:', error);
             return [];
         }
     }

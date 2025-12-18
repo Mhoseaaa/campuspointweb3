@@ -88,5 +88,13 @@ contract ActivityManager {
         uint256 tokenId = activityCert.mintCertificate(student, uri);
         emit CertificateMinted(activityId, student, tokenId, uri);
     }
-}
 
+    // Berikan poin custom ke mahasiswa (untuk sertifikat eksternal, dll)
+    function rewardCustomPoints(address student, uint256 amount) external onlyOwner {
+        require(student != address(0), "Invalid student address");
+        require(amount > 0, "Amount must be greater than 0");
+
+        campusPoint.mint(student, amount);
+        emit StudentRewarded(0, student, amount); // activityId 0 = custom
+    }
+}

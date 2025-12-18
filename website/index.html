@@ -15,56 +15,43 @@
 </head>
 
 <body>
-    <div class="app-container">
-        <!-- Sidebar Navigation -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
+    <div class="app-container no-sidebar">
+        <!-- Top Navigation Bar -->
+        <header class="top-nav">
+            <div class="top-nav-left">
                 <div class="logo">
                     <span class="logo-icon">◆</span>
                     <span class="logo-text">Campus Point</span>
                 </div>
             </div>
-            <nav class="nav-menu">
-                <a href="#dashboard" class="nav-item active" data-page="dashboard">
+            <nav class="top-nav-center">
+                <a href="#dashboard" class="nav-tab active" data-page="dashboard">
                     <span class="nav-icon">📊</span>
                     <span>Dashboard</span>
                 </a>
-                <a href="#activities" class="nav-item" data-page="activities">
+                <a href="#activities" class="nav-tab student-only" data-page="activities">
                     <span class="nav-icon">📋</span>
                     <span>Kegiatan</span>
                 </a>
-                <a href="#certificates" class="nav-item" data-page="certificates">
+                <a href="#certificates" class="nav-tab student-only" data-page="certificates">
                     <span class="nav-icon">🎖️</span>
                     <span>Sertifikat</span>
                 </a>
-                <a href="#admin" class="nav-item" data-page="admin">
+                <a href="#admin" class="nav-tab admin-only" data-page="admin">
                     <span class="nav-icon">⚙️</span>
                     <span>Admin Panel</span>
                 </a>
             </nav>
-            <div class="sidebar-footer">
-                <div class="network-badge">
-                    <span class="network-dot"></span>
-                    <span>Sepolia Testnet</span>
-                </div>
+            <div class="top-nav-right">
+                <button class="btn btn-primary" id="connectWallet">
+                    <span class="btn-icon">🔗</span>
+                    <span id="walletButtonText">Connect Wallet</span>
+                </button>
             </div>
-        </aside>
+        </header>
 
         <!-- Main Content -->
-        <main class="main-content">
-            <!-- Header -->
-            <header class="header">
-                <div class="header-left">
-                    <h1 class="page-title" id="pageTitle">Dashboard</h1>
-                </div>
-                <div class="header-right">
-                    <button class="btn btn-primary" id="connectWallet">
-                        <span class="btn-icon">🔗</span>
-                        <span id="walletButtonText">Connect Wallet</span>
-                    </button>
-                </div>
-            </header>
-
+        <main class="main-content full-width">
             <!-- Page Content Container -->
             <div class="page-container" id="pageContainer">
                 <!-- Dashboard Page -->
@@ -98,11 +85,21 @@
                         </div>
                     </div>
 
-                    <div class="recent-section">
-                        <h3>Aktivitas Terbaru</h3>
-                        <div class="activity-list" id="recentActivity">
-                            <div class="empty-state">
-                                <p>Belum ada aktivitas. Hubungkan wallet untuk melihat data Anda.</p>
+                    <div class="dashboard-row">
+                        <div class="recent-section">
+                            <h3>Aktivitas Terbaru</h3>
+                            <div class="activity-list" id="recentActivity">
+                                <div class="empty-state">
+                                    <p>Belum ada aktivitas. Hubungkan wallet untuk melihat data Anda.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="recent-section">
+                            <h3>💰 Poin Terbaru</h3>
+                            <div class="activity-list" id="recentPoints">
+                                <div class="empty-state">
+                                    <p>Belum ada poin yang diterima.</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -132,80 +129,170 @@
                             <p>Belum ada sertifikat. Hubungkan wallet untuk melihat koleksi Anda.</p>
                         </div>
                     </div>
+
+                    <!-- Request Certificate Form (for students) -->
+                    <div class="request-cert-section" id="requestCertSection">
+                        <div class="page-header">
+                            <h3>📝 Ajukan Sertifikat</h3>
+                            <p>Ajukan klaim sertifikat untuk kegiatan yang pernah Anda ikuti</p>
+                        </div>
+                        <form id="requestCertForm" class="form request-cert-form">
+                            <div class="form-group">
+                                <label for="reqEventName">Nama Kegiatan/Event</label>
+                                <input type="text" id="reqEventName" placeholder="Contoh: Seminar Web3" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="reqIpfsUri">IPFS URI (Metadata Sertifikat)</label>
+                                <input type="text" id="reqIpfsUri" placeholder="ipfs://Qm..." required>
+                                <small>Upload metadata sertifikat Anda ke IPFS terlebih dahulu</small>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Ajukan Sertifikat</button>
+                        </form>
+                    </div>
                 </div>
 
                 <!-- Admin Page -->
                 <div class="page" id="adminPage">
-                    <div class="page-header">
+                    <div class="page-header centered">
                         <h2>Panel Admin</h2>
-                        <p>Kelola kegiatan dan berikan reward ke mahasiswa</p>
+                        <p>Kelola kegiatan, reward, dan sertifikat</p>
                     </div>
 
-                    <div class="admin-sections">
-                        <!-- Create Activity -->
-                        <div class="admin-card">
-                            <h3>Buat Kegiatan Baru</h3>
-                            <form id="createActivityForm" class="form">
-                                <div class="form-group">
-                                    <label for="activityName">Nama Kegiatan</label>
-                                    <input type="text" id="activityName" placeholder="Contoh: Seminar AI" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="pointReward">Poin Reward</label>
-                                    <input type="number" id="pointReward" placeholder="100" min="1" required>
-                                </div>
-                                <button type="submit" class="btn btn-primary">Buat Kegiatan</button>
-                            </form>
-                        </div>
+                    <!-- Admin Tabs -->
+                    <div class="admin-tabs">
+                        <button class="admin-tab active" data-tab="adminKegiatan">📋 Kegiatan</button>
+                        <button class="admin-tab" data-tab="adminPengajuan">📩 Pengajuan</button>
+                        <button class="admin-tab" data-tab="adminSertifikat">🎖️ Semua Sertifikat</button>
+                    </div>
 
-                        <!-- Reward Student -->
-                        <div class="admin-card">
-                            <h3>Berikan Poin ke Mahasiswa</h3>
-                            <form id="rewardStudentForm" class="form">
-                                <div class="form-group">
-                                    <label for="rewardActivityId">ID Kegiatan</label>
-                                    <input type="number" id="rewardActivityId" placeholder="1" min="1" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="studentAddress">Alamat Wallet Mahasiswa</label>
-                                    <input type="text" id="studentAddress" placeholder="0x..." required>
-                                </div>
-                                <button type="submit" class="btn btn-primary">Kirim Poin</button>
-                            </form>
-                        </div>
-
-                        <!-- Mint Certificate -->
-                        <div class="admin-card">
-                            <h3>Terbitkan Sertifikat NFT</h3>
-                            <form id="mintCertificateForm" class="form">
-                                <div class="form-group">
-                                    <label for="certActivityId">ID Kegiatan</label>
-                                    <input type="number" id="certActivityId" placeholder="1" min="1" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="certStudentAddress">Alamat Wallet Mahasiswa</label>
-                                    <input type="text" id="certStudentAddress" placeholder="0x..." required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="certUri">IPFS URI (Metadata)</label>
-                                    <input type="text" id="certUri" placeholder="ipfs://..." required>
-                                </div>
-
-                                <!-- Certificate Preview Section -->
-                                <div class="cert-preview-section" id="certPreviewSection" style="display: none;">
-                                    <label>Preview Sertifikat</label>
-                                    <div class="cert-preview-container">
-                                        <img id="certPreviewImage" src="" alt="Certificate Preview">
-                                        <div class="cert-preview-info" id="certPreviewInfo"></div>
+                    <!-- Tab Contents -->
+                    <div class="admin-tab-contents">
+                        <!-- Kegiatan Tab -->
+                        <div class="admin-tab-content active" id="adminKegiatan">
+                            <div class="admin-sections">
+                                <!-- Daftar Kegiatan -->
+                                <div class="admin-card full-width">
+                                    <h3>📋 Daftar Kegiatan</h3>
+                                    <div class="events-table-container" id="eventsTableContainer">
+                                        <table class="events-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>ID</th>
+                                                    <th>Nama</th>
+                                                    <th>Poin</th>
+                                                    <th>Status</th>
+                                                    <th>Peserta</th>
+                                                    <th>Aksi</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="eventsTableBody">
+                                                <tr>
+                                                    <td colspan="5" class="empty-state">Memuat data...</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
 
-                                <div class="form-actions">
-                                    <button type="button" class="btn btn-secondary" id="previewCertBtn">Preview</button>
-                                    <button type="submit" class="btn btn-primary" id="mintCertBtn" disabled>Terbitkan
-                                        Sertifikat</button>
+                                <!-- Buat Kegiatan -->
+                                <div class="admin-card">
+                                    <h3>➕ Buat Kegiatan Baru</h3>
+                                    <form id="createActivityForm" class="form">
+                                        <div class="form-group">
+                                            <label for="activityName">Nama Kegiatan</label>
+                                            <input type="text" id="activityName" placeholder="Contoh: Seminar AI"
+                                                required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="pointReward">Poin Reward</label>
+                                            <input type="number" id="pointReward" placeholder="100" min="1" required>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Buat Kegiatan</button>
+                                    </form>
                                 </div>
-                            </form>
+
+                                <!-- Berikan Poin -->
+                                <div class="admin-card">
+                                    <h3>💰 Berikan Poin ke Mahasiswa</h3>
+                                    <form id="rewardStudentForm" class="form">
+                                        <div class="form-group">
+                                            <label for="rewardEventSelect">Pilih Kegiatan</label>
+                                            <select id="rewardEventSelect" required>
+                                                <option value="">-- Pilih Kegiatan --</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="rewardStudentSelect">Pilih Mahasiswa</label>
+                                            <select id="rewardStudentSelect" required>
+                                                <option value="">-- Pilih kegiatan terlebih dahulu --</option>
+                                            </select>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Kirim Poin</button>
+                                    </form>
+                                </div>
+
+                                <!-- Terbitkan Sertifikat -->
+                                <div class="admin-card">
+                                    <h3>🎖️ Terbitkan Sertifikat NFT</h3>
+                                    <form id="mintCertificateForm" class="form">
+                                        <div class="form-group">
+                                            <label for="certEventSelect">Pilih Kegiatan</label>
+                                            <select id="certEventSelect" required>
+                                                <option value="">-- Pilih Kegiatan --</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="certStudentSelect">Pilih Mahasiswa (yang sudah hadir)</label>
+                                            <select id="certStudentSelect" required>
+                                                <option value="">-- Pilih kegiatan terlebih dahulu --</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="certUri">IPFS URI (Metadata)</label>
+                                            <input type="text" id="certUri" placeholder="ipfs://..." required>
+                                        </div>
+                                        <div class="cert-preview-section" id="certPreviewSection"
+                                            style="display: none;">
+                                            <label>Preview Sertifikat</label>
+                                            <div class="cert-preview-container">
+                                                <img id="certPreviewImage" src="" alt="Certificate Preview">
+                                                <div class="cert-preview-info" id="certPreviewInfo"></div>
+                                            </div>
+                                        </div>
+                                        <div class="form-actions">
+                                            <button type="button" class="btn btn-secondary"
+                                                id="previewCertBtn">Preview</button>
+                                            <button type="submit" class="btn btn-primary">Terbitkan Sertifikat</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pengajuan Tab -->
+                        <div class="admin-tab-content" id="adminPengajuan">
+                            <div class="page-header">
+                                <h3>📩 Pengajuan Sertifikat dari Mahasiswa</h3>
+                                <p>Review dan approve/tolak pengajuan sertifikat</p>
+                            </div>
+                            <div class="submissions-grid" id="submissionsGrid">
+                                <div class="empty-state">
+                                    <p>Tidak ada pengajuan sertifikat yang pending.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Semua Sertifikat Tab -->
+                        <div class="admin-tab-content" id="adminSertifikat">
+                            <div class="page-header centered">
+                                <h3>🎖️ Semua Sertifikat yang Diterbitkan</h3>
+                                <p>Galeri sertifikat NFT yang sudah di-mint</p>
+                            </div>
+                            <div class="certificates-gallery large" id="allCertificatesGallery">
+                                <div class="empty-state">
+                                    <p>Belum ada sertifikat yang diterbitkan.</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -227,7 +314,7 @@
         </div>
     </div>
 
-    <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.6.4/ethers.umd.min.js"></script>
     <script src="js/contracts.js"></script>
     <script src="js/web3-utils.js"></script>
     <script src="js/app.js"></script>

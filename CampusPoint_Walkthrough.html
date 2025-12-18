@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>CampusPoint Web3 Walkthrough</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css/github-markdown.min.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">CampusPoint Web3 Walkthrough</h1>
+</header>
+<h1 id="campuspoint-web3---ringkasan-fitur">🎓 CampusPoint Web3 -
+Ringkasan Fitur</h1>
+<h2 id="apa-itu-campuspoint">Apa itu CampusPoint?</h2>
+<p>Sistem manajemen poin dan sertifikat berbasis blockchain untuk
+kampus. Mahasiswa mendapatkan token <strong>CPNT</strong> (CampusPoint)
+dan sertifikat <strong>NFT</strong> saat mengikuti kegiatan kampus.</p>
+<hr />
+<h2 id="arsitektur-smart-contract">🏗️ Arsitektur Smart Contract</h2>
+<pre class="mermaid"><code>graph TD
+    A[ActivityManager] --&gt;|mint| B[CampusPoint - ERC20]
+    A --&gt;|mint| C[ActivityCertificate - ERC721]
+    D[Admin Wallet] --&gt;|owns| A
+    A --&gt;|owns| B
+    A --&gt;|owns| C</code></pre>
+<table>
+<colgroup>
+<col style="width: 37%" />
+<col style="width: 29%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Contract</th>
+<th>Fungsi</th>
+<th>Address</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>CampusPoint</strong></td>
+<td>Token ERC20 untuk poin (CPNT)</td>
+<td><code>0xFc39...0997</code></td>
+</tr>
+<tr>
+<td><strong>ActivityCertificate</strong></td>
+<td>NFT ERC721 untuk sertifikat</td>
+<td><code>0x219c...6af8</code></td>
+</tr>
+<tr>
+<td><strong>ActivityManager</strong></td>
+<td>Kontrak utama pengelola</td>
+<td><code>0xD4F9...0D21</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="peran-pengguna">👥 Peran Pengguna</h2>
+<h3 id="mahasiswa-non-admin">🎓 Mahasiswa (Non-Admin)</h3>
+<ul>
+<li>Lihat <strong>Dashboard</strong> dengan saldo poin dan jumlah
+sertifikat</li>
+<li>Lihat <strong>Kegiatan Aktif</strong> dan daftar dengan
+<strong>double-click</strong></li>
+<li>Lihat <strong>Sertifikat</strong> yang dimiliki</li>
+<li>Ajukan <strong>Sertifikat Eksternal</strong> (kegiatan di luar
+kampus)</li>
+</ul>
+<h3 id="admin-contract-owner">👨‍💼 Admin (Contract Owner)</h3>
+<ul>
+<li>Akses <strong>Admin Panel</strong> dengan 3 tab:
+<ul>
+<li><strong>Kegiatan</strong>: Buat kegiatan, ubah status, berikan
+poin</li>
+<li><strong>Pengajuan</strong>: Approve/reject pengajuan sertifikat
+eksternal</li>
+<li><strong>Sertifikat</strong>: Lihat semua sertifikat yang
+diterbitkan</li>
+</ul></li>
+</ul>
+<hr />
+<h2 id="fitur-utama">✨ Fitur Utama</h2>
+<h3 id="manajemen-kegiatan-admin">1. Manajemen Kegiatan (Admin)</h3>
+<ul>
+<li><strong>Buat Kegiatan Baru</strong>: Nama + jumlah poin reward</li>
+<li><strong>Status Kegiatan</strong>: Belum Dimulai → Aktif →
+Selesai</li>
+<li><strong>Lihat Peserta</strong>: Jumlah mahasiswa terdaftar per
+kegiatan</li>
+</ul>
+<h3 id="pendaftaran-kegiatan-mahasiswa">2. Pendaftaran Kegiatan
+(Mahasiswa)</h3>
+<ul>
+<li><strong>Double-click</strong> pada kartu kegiatan yang
+<strong>Aktif</strong></li>
+<li>Otomatis terdaftar + menerima poin</li>
+<li>Status “Sudah Terdaftar” ditampilkan</li>
+</ul>
+<h3 id="pemberian-poin-admin">3. Pemberian Poin (Admin)</h3>
+<ul>
+<li>Pilih kegiatan → pilih mahasiswa dari dropdown</li>
+<li>Poin dikirim via smart contract <code>rewardStudent()</code></li>
+</ul>
+<h3 id="sertifikat-nft">4. Sertifikat NFT</h3>
+<ul>
+<li><strong>Admin</strong>: Terbitkan sertifikat dengan IPFS URI</li>
+<li><strong>Mahasiswa</strong>: Ajukan sertifikat eksternal</li>
+<li>Semua sertifikat tampil di galeri admin</li>
+</ul>
+<h3 id="dashboard">5. Dashboard</h3>
+<table>
+<thead>
+<tr>
+<th>Komponen</th>
+<th>Deskripsi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Saldo Poin</strong></td>
+<td>Total CPNT yang dimiliki</td>
+</tr>
+<tr>
+<td><strong>Jumlah Sertifikat</strong></td>
+<td>Total NFT sertifikat</td>
+</tr>
+<tr>
+<td><strong>Kegiatan Aktif</strong></td>
+<td>Jumlah kegiatan dengan status “Aktif”</td>
+</tr>
+<tr>
+<td><strong>Aktivitas Terbaru</strong></td>
+<td>5 kegiatan terakhir</td>
+</tr>
+<tr>
+<td><strong>Poin Terbaru</strong></td>
+<td>Riwayat poin yang diterima</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="alur-demo-yang-disarankan">🔄 Alur Demo yang Disarankan</h2>
+<h3 id="a.-demo-sebagai-admin">A. Demo sebagai Admin</h3>
+<ol type="1">
+<li><strong>Connect Wallet</strong> dengan akun admin (owner
+kontrak)</li>
+<li>Buka <strong>Admin Panel</strong> → Tab
+<strong>Kegiatan</strong></li>
+<li><strong>Buat kegiatan baru</strong>: “Workshop Blockchain” dengan
+100 poin</li>
+<li><strong>Ubah status</strong> ke “Aktif”</li>
+<li>Tunjukkan di tab <strong>Sertifikat</strong> (kosong karena belum
+ada)</li>
+</ol>
+<h3 id="b.-demo-sebagai-mahasiswa">B. Demo sebagai Mahasiswa</h3>
+<ol type="1">
+<li><strong>Ganti akun</strong> di MetaMask ke akun mahasiswa</li>
+<li>Buka tab <strong>Kegiatan</strong> → lihat kegiatan yang aktif</li>
+<li><strong>Double-click</strong> untuk mendaftar → poin otomatis
+diterima</li>
+<li>Cek <strong>Dashboard</strong> → saldo poin bertambah</li>
+</ol>
+<h3 id="c.-demo-pemberian-poin-admin">C. Demo Pemberian Poin
+(Admin)</h3>
+<ol type="1">
+<li>Kembali ke akun admin</li>
+<li><strong>Admin Panel</strong> → <strong>Kegiatan</strong> →
+<strong>Berikan Poin ke Mahasiswa</strong></li>
+<li>Pilih kegiatan + pilih mahasiswa dari dropdown</li>
+<li>Klik “Kirim Poin”</li>
+</ol>
+<h3 id="d.-demo-pengajuan-sertifikat">D. Demo Pengajuan Sertifikat</h3>
+<ol type="1">
+<li>Akun mahasiswa → tab <strong>Sertifikat</strong> → “Ajukan
+Sertifikat”</li>
+<li>Isi nama kegiatan + IPFS URI</li>
+<li>Akun admin → <strong>Admin Panel</strong> →
+<strong>Pengajuan</strong></li>
+<li>Approve pengajuan → sertifikat diterbitkan</li>
+</ol>
+<hr />
+<h2 id="fungsi-smart-contract">📋 Fungsi Smart Contract</h2>
+<h3 id="activitymanager.sol-kontrak-utama">ActivityManager.sol (Kontrak
+Utama)</h3>
+<pre class="solidity"><code>// State Variables
+address public owner                    // Alamat pemilik kontrak
+ICampusPoint public campusPoint        // Referensi ke kontrak token
+IActivityCertificate public activityCert // Referensi ke kontrak NFT
+uint256 public nextActivityId          // ID kegiatan berikutnya
+mapping(uint256 =&gt; Activity) activities // Mapping kegiatan
+
+// Events
+event ActivityCreated(uint256 id, string name, uint256 pointReward)
+event StudentRewarded(uint256 activityId, address student, uint256 pointReward)
+event CertificateMinted(uint256 activityId, address student, uint256 tokenId, string uri)</code></pre>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 21%" />
+<col style="width: 29%" />
+<col style="width: 18%" />
+<col style="width: 29%" />
+</colgroup>
+<thead>
+<tr>
+<th>Fungsi</th>
+<th>Parameter</th>
+<th>Akses</th>
+<th>Deskripsi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>constructor</code></td>
+<td><code>campusPointAddress, activityCertAddress</code></td>
+<td>-</td>
+<td>Inisialisasi kontrak dengan alamat token &amp; NFT</td>
+</tr>
+<tr>
+<td><code>createActivity</code></td>
+<td><code>name, pointReward</code></td>
+<td>onlyOwner</td>
+<td>Buat kegiatan baru dengan nama dan poin</td>
+</tr>
+<tr>
+<td><code>setActivityActive</code></td>
+<td><code>activityId, active</code></td>
+<td>onlyOwner</td>
+<td>Aktifkan/nonaktifkan kegiatan</td>
+</tr>
+<tr>
+<td><code>getActivity</code></td>
+<td><code>activityId</code></td>
+<td>view</td>
+<td>Ambil detail kegiatan (id, nama, poin, status)</td>
+</tr>
+<tr>
+<td><code>rewardStudent</code></td>
+<td><code>activityId, student</code></td>
+<td>onlyOwner</td>
+<td>Berikan poin sesuai reward kegiatan</td>
+</tr>
+<tr>
+<td><code>rewardCustomPoints</code></td>
+<td><code>student, amount</code></td>
+<td>onlyOwner</td>
+<td>Berikan jumlah poin custom</td>
+</tr>
+<tr>
+<td><code>mintCertificate</code></td>
+<td><code>activityId, student, uri</code></td>
+<td>onlyOwner</td>
+<td>Terbitkan sertifikat NFT</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="fungsi-javascript---web3-utils.js">📋 Fungsi JavaScript -
+web3-utils.js</h2>
+<p>Class <code>Web3Utils</code> - Utilitas untuk interaksi
+Web3/Blockchain:</p>
+<table>
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 36%" />
+<col style="width: 36%" />
+</colgroup>
+<thead>
+<tr>
+<th>Fungsi</th>
+<th>Parameter</th>
+<th>Deskripsi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>constructor()</code></td>
+<td>-</td>
+<td>Inisialisasi provider, signer, contracts</td>
+</tr>
+<tr>
+<td><code>isMetaMaskInstalled()</code></td>
+<td>-</td>
+<td>Cek apakah MetaMask terinstall</td>
+</tr>
+<tr>
+<td><code>connectWallet()</code></td>
+<td>-</td>
+<td>Connect ke MetaMask, switch network, init contracts</td>
+</tr>
+<tr>
+<td><code>switchToSepolia()</code></td>
+<td>-</td>
+<td>Pindah ke network Ganache/Sepolia</td>
+</tr>
+<tr>
+<td><code>initializeContracts()</code></td>
+<td>-</td>
+<td>Inisialisasi instance kontrak</td>
+</tr>
+<tr>
+<td><code>setupEventListeners()</code></td>
+<td>-</td>
+<td>Setup listener untuk account/chain change</td>
+</tr>
+<tr>
+<td><code>disconnect()</code></td>
+<td>-</td>
+<td>Disconnect wallet, clear state</td>
+</tr>
+<tr>
+<td><code>shortenAddress(address)</code></td>
+<td><code>address</code></td>
+<td>Singkat alamat untuk display (0x123…abc)</td>
+</tr>
+<tr>
+<td><code>ipfsToHttp(ipfsUri)</code></td>
+<td><code>ipfsUri</code></td>
+<td>Konversi ipfs:// ke https://</td>
+</tr>
+<tr>
+<td><code>fetchIPFSMetadata(uri)</code></td>
+<td><code>uri</code></td>
+<td>Ambil metadata JSON dari IPFS</td>
+</tr>
+<tr>
+<td><code>getPointBalance(address)</code></td>
+<td><code>address?</code></td>
+<td>Ambil saldo poin CPNT</td>
+</tr>
+<tr>
+<td><code>getCertificateCount(address)</code></td>
+<td><code>address?</code></td>
+<td>Hitung jumlah sertifikat NFT</td>
+</tr>
+<tr>
+<td><code>getAllActivities()</code></td>
+<td>-</td>
+<td>Ambil semua kegiatan dari blockchain</td>
+</tr>
+<tr>
+<td><code>getUserCertificates(address)</code></td>
+<td><code>address?</code></td>
+<td>Ambil sertifikat milik user</td>
+</tr>
+<tr>
+<td><code>getAllCertificates()</code></td>
+<td>-</td>
+<td>Ambil SEMUA sertifikat (untuk admin)</td>
+</tr>
+<tr>
+<td><code>isContractOwner()</code></td>
+<td>-</td>
+<td>Cek apakah user adalah owner kontrak</td>
+</tr>
+<tr>
+<td><code>createActivity(name, pointReward)</code></td>
+<td><code>name, pointReward</code></td>
+<td>Buat kegiatan baru (admin)</td>
+</tr>
+<tr>
+<td><code>rewardStudent(activityId, studentAddress)</code></td>
+<td><code>activityId, studentAddress</code></td>
+<td>Kirim poin ke mahasiswa (admin)</td>
+</tr>
+<tr>
+<td><code>mintCertificate(activityId, studentAddress, uri)</code></td>
+<td><code>activityId, studentAddress, uri</code></td>
+<td>Terbitkan sertifikat NFT (admin)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="fungsi-javascript---app.js">📋 Fungsi JavaScript - app.js</h2>
+<p>Class <code>CampusPointApp</code> - Logika utama aplikasi:</p>
+<h3 id="routing-inisialisasi">Routing &amp; Inisialisasi</h3>
+<table>
+<thead>
+<tr>
+<th>Fungsi</th>
+<th>Deskripsi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>constructor()</code></td>
+<td>Inisialisasi state, panggil init()</td>
+</tr>
+<tr>
+<td><code>init()</code></td>
+<td>Setup routing dan event listeners</td>
+</tr>
+<tr>
+<td><code>setupRouting()</code></td>
+<td>Setup hash-based routing</td>
+</tr>
+<tr>
+<td><code>handleHashChange()</code></td>
+<td>Handle perubahan URL hash</td>
+</tr>
+<tr>
+<td><code>navigateTo(pageName)</code></td>
+<td>Navigasi ke halaman tertentu</td>
+</tr>
+<tr>
+<td><code>loadPageData(pageName)</code></td>
+<td>Load data sesuai halaman aktif</td>
+</tr>
+</tbody>
+</table>
+<h3 id="event-listeners">Event Listeners</h3>
+<table>
+<thead>
+<tr>
+<th>Fungsi</th>
+<th>Deskripsi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>setupEventListeners()</code></td>
+<td>Setup semua event listeners</td>
+</tr>
+<tr>
+<td><code>setupAdminForms()</code></td>
+<td>Setup form handlers untuk admin</td>
+</tr>
+<tr>
+<td><code>setupAdminTabs()</code></td>
+<td>Setup tab switching admin panel</td>
+</tr>
+</tbody>
+</table>
+<h3 id="wallet-authentication">Wallet &amp; Authentication</h3>
+<table>
+<thead>
+<tr>
+<th>Fungsi</th>
+<th>Deskripsi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>handleConnectWallet()</code></td>
+<td>Proses koneksi wallet</td>
+</tr>
+<tr>
+<td><code>updateWalletUI(address)</code></td>
+<td>Update tampilan tombol wallet</td>
+</tr>
+<tr>
+<td><code>checkAdminAccess()</code></td>
+<td>Cek dan tampilkan menu admin jika owner</td>
+</tr>
+</tbody>
+</table>
+<h3 id="dashboard-1">Dashboard</h3>
+<table>
+<thead>
+<tr>
+<th>Fungsi</th>
+<th>Deskripsi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>loadDashboardData()</code></td>
+<td>Load semua data dashboard</td>
+</tr>
+<tr>
+<td><code>updateRecentPoints()</code></td>
+<td>Tampilkan riwayat poin terbaru</td>
+</tr>
+<tr>
+<td><code>updateRecentActivity(activities)</code></td>
+<td>Tampilkan aktivitas terbaru</td>
+</tr>
+<tr>
+<td><code>getTimeAgo(timestamp)</code></td>
+<td>Konversi timestamp ke “x menit lalu”</td>
+</tr>
+</tbody>
+</table>
+<h3 id="kegiatan-activities">Kegiatan (Activities)</h3>
+<table>
+<colgroup>
+<col style="width: 42%" />
+<col style="width: 57%" />
+</colgroup>
+<thead>
+<tr>
+<th>Fungsi</th>
+<th>Deskripsi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>loadActivitiesData()</code></td>
+<td>Load daftar kegiatan untuk mahasiswa</td>
+</tr>
+<tr>
+<td><code>loadEventsTable()</code></td>
+<td>Load tabel kegiatan untuk admin</td>
+</tr>
+<tr>
+<td><code>handleCreateActivity()</code></td>
+<td>Proses pembuatan kegiatan baru</td>
+</tr>
+<tr>
+<td><code>getActivityStatus(activityId)</code></td>
+<td>Ambil status dari localStorage</td>
+</tr>
+<tr>
+<td><code>setActivityStatus(activityId, status)</code></td>
+<td>Simpan status ke localStorage</td>
+</tr>
+<tr>
+<td><code>changeActivityStatus(activityId, status)</code></td>
+<td>Ubah status kegiatan</td>
+</tr>
+<tr>
+<td><code>submitStatusChange(activityId)</code></td>
+<td>Submit perubahan status dari dropdown</td>
+</tr>
+<tr>
+<td><code>populateEventDropdowns()</code></td>
+<td>Isi dropdown kegiatan</td>
+</tr>
+</tbody>
+</table>
+<h3 id="sertifikat">Sertifikat</h3>
+<table>
+<thead>
+<tr>
+<th>Fungsi</th>
+<th>Deskripsi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>loadCertificatesData()</code></td>
+<td>Load sertifikat milik user</td>
+</tr>
+<tr>
+<td><code>loadAllCertificates()</code></td>
+<td>Load semua sertifikat (admin)</td>
+</tr>
+<tr>
+<td><code>handleCertificatePreview()</code></td>
+<td>Preview sertifikat dari IPFS URI</td>
+</tr>
+<tr>
+<td><code>handleMintCertificate()</code></td>
+<td>Proses minting sertifikat</td>
+</tr>
+<tr>
+<td><code>handleRequestCertificate()</code></td>
+<td>Mahasiswa ajukan sertifikat eksternal</td>
+</tr>
+</tbody>
+</table>
+<h3 id="pemberian-poin">Pemberian Poin</h3>
+<table>
+<colgroup>
+<col style="width: 42%" />
+<col style="width: 57%" />
+</colgroup>
+<thead>
+<tr>
+<th>Fungsi</th>
+<th>Deskripsi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>handleRewardStudent()</code></td>
+<td>Proses pemberian poin ke mahasiswa</td>
+</tr>
+<tr>
+<td><code>updateStudentDropdown()</code></td>
+<td>Update dropdown mahasiswa (mint cert)</td>
+</tr>
+<tr>
+<td><code>updateRewardStudentDropdown()</code></td>
+<td>Update dropdown mahasiswa (give points)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="pendaftaran-kegiatan">Pendaftaran Kegiatan</h3>
+<table>
+<colgroup>
+<col style="width: 42%" />
+<col style="width: 57%" />
+</colgroup>
+<thead>
+<tr>
+<th>Fungsi</th>
+<th>Deskripsi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>requestJoinActivity(activityId, activityName)</code></td>
+<td>Mahasiswa daftar kegiatan (double-click)</td>
+</tr>
+<tr>
+<td><code>getParticipationRequests()</code></td>
+<td>Ambil pengajuan keikutsertaan</td>
+</tr>
+<tr>
+<td><code>storeParticipationRequest(request)</code></td>
+<td>Simpan pengajuan keikutsertaan</td>
+</tr>
+<tr>
+<td><code>removeParticipationRequest(requestId)</code></td>
+<td>Hapus pengajuan</td>
+</tr>
+<tr>
+<td><code>approveParticipation(requestId)</code></td>
+<td>Approve keikutsertaan (admin)</td>
+</tr>
+<tr>
+<td><code>rejectParticipation(requestId)</code></td>
+<td>Reject keikutsertaan (admin)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="pengajuan-sertifikat">Pengajuan Sertifikat</h3>
+<table>
+<thead>
+<tr>
+<th>Fungsi</th>
+<th>Deskripsi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>loadSubmissions()</code></td>
+<td>Load pengajuan sertifikat eksternal</td>
+</tr>
+<tr>
+<td><code>getStoredSubmissions()</code></td>
+<td>Ambil pengajuan dari localStorage</td>
+</tr>
+<tr>
+<td><code>storeSubmission(submission)</code></td>
+<td>Simpan pengajuan baru</td>
+</tr>
+<tr>
+<td><code>removeSubmission(submissionId)</code></td>
+<td>Hapus pengajuan</td>
+</tr>
+<tr>
+<td><code>openPreviewModal(ipfsUri, submissionId)</code></td>
+<td>Preview pengajuan</td>
+</tr>
+<tr>
+<td><code>approveSubmission(submissionId)</code></td>
+<td>Approve pengajuan (admin)</td>
+</tr>
+<tr>
+<td><code>rejectSubmission(submissionId)</code></td>
+<td>Reject pengajuan (admin)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data-storage-localstorage">Data Storage (localStorage)</h3>
+<table>
+<thead>
+<tr>
+<th>Fungsi</th>
+<th>Deskripsi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>getStoredAttendees()</code></td>
+<td>Ambil daftar peserta</td>
+</tr>
+<tr>
+<td><code>storeAttendee(eventId, address)</code></td>
+<td>Simpan peserta baru</td>
+</tr>
+<tr>
+<td><code>getRecentPoints()</code></td>
+<td>Ambil riwayat poin</td>
+</tr>
+<tr>
+<td><code>storeRecentPoints(pointsData)</code></td>
+<td>Simpan transaksi poin baru</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ui-utilities">UI Utilities</h3>
+<table>
+<thead>
+<tr>
+<th>Fungsi</th>
+<th>Deskripsi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>showToast(message, type)</code></td>
+<td>Tampilkan notifikasi toast</td>
+</tr>
+<tr>
+<td><code>openModal(title, content)</code></td>
+<td>Buka modal dialog</td>
+</tr>
+<tr>
+<td><code>closeModal()</code></td>
+<td>Tutup modal dialog</td>
+</tr>
+</tbody>
+</table>
+<h3 id="admin-dashboard">Admin Dashboard</h3>
+<table>
+<thead>
+<tr>
+<th>Fungsi</th>
+<th>Deskripsi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>loadAdminDashboard()</code></td>
+<td>Load statistik admin</td>
+</tr>
+<tr>
+<td><code>loadAdminTabData(tabId)</code></td>
+<td>Load data sesuai tab admin yang aktif</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="struktur-file-penting">📁 Struktur File Penting</h2>
+<pre><code>campuspointweb3/
+├── ActivityManager.sol      # Smart contract utama
+├── CampusPoint.sol         # ERC20 token
+├── ActivityCertificate.sol # ERC721 NFT
+└── website/
+    ├── index.html          # Struktur halaman
+    ├── styles.css          # Styling
+    └── js/
+        ├── app.js          # Logika aplikasi
+        ├── contracts.js    # Alamat &amp; ABI kontrak
+        └── web3-utils.js   # Utility Web3</code></pre>
+<hr />
+<h2 id="catatan-penting-untuk-demo">⚠️ Catatan Penting untuk Demo</h2>
+<ol type="1">
+<li><strong>Ganache harus running</strong> di
+<code>http://127.0.0.1:7545</code></li>
+<li><strong>MetaMask</strong> terhubung ke network Ganache (Chain ID:
+1337)</li>
+<li>Akun admin = akun yang deploy kontrak</li>
+<li>Hard refresh (<code>Cmd+Shift+R</code>) jika ada perubahan yang
+tidak muncul</li>
+<li>Data kegiatan tersimpan di <strong>blockchain</strong>, status di
+<strong>localStorage</strong></li>
+</ol>
+</body>
+</html>
