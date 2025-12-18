@@ -1249,20 +1249,24 @@ class CampusPointApp {
         if (!gallery) return;
 
         try {
-            const certs = await window.web3Utils.getUserCertificates();
-            // This shows owner's certs; ideally we'd query all certs
+            gallery.innerHTML = '<div class="empty-state"><span class="loading"></span> Memuat sertifikat...</div>';
+
+            const certs = await window.web3Utils.getAllCertificates();
+
             if (certs.length === 0) {
                 gallery.innerHTML = '<div class="empty-state"><p>Belum ada sertifikat yang diterbitkan.</p></div>';
                 return;
             }
 
             gallery.innerHTML = certs.map(c => `
-                <div class="cert-gallery-item" onclick="app.openModal('Sertifikat #${c.tokenId}', '<img src=&quot;${c.imageUrl}&quot; style=&quot;max-width:100%;&quot;>')">
+                <div class="cert-gallery-item" onclick="app.openModal('Sertifikat #${c.tokenId}', '<img src=&quot;${c.imageUrl}&quot; style=&quot;max-width:100%;&quot;><br><small>Owner: ${window.web3Utils.shortenAddress(c.owner)}</small>')">
                     <img src="${c.imageUrl || 'data:image/svg+xml,<svg></svg>'}" alt="Certificate">
                     <span>Token #${c.tokenId}</span>
+                    <small>${window.web3Utils.shortenAddress(c.owner)}</small>
                 </div>
             `).join('');
         } catch (error) {
+            console.error('Error loading all certificates:', error);
             gallery.innerHTML = '<div class="empty-state"><p>Gagal memuat sertifikat.</p></div>';
         }
     }
